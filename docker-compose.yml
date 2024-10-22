@@ -1,19 +1,17 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./docs
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://backend:5000
+  # frontend:
+  #   image: node:18
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - VITE_API_URL=http://backend:5000
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
     ports:
       - "5000:5000"
     environment:
@@ -22,6 +20,8 @@ services:
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./backend:/app
 
   mongodb:
     image: mongo:latest
@@ -33,7 +33,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - "6378:6378"
 
 volumes:
   mongodb_data:
