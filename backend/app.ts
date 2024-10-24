@@ -28,8 +28,13 @@ const limiter = rateLimit({
 });
 
 // Middleware
+// app.use(cors({
+//   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+//   credentials: true,
+// }));
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true, // Allows all origins
   credentials: true,
 }));
 
@@ -40,10 +45,10 @@ app.use(helmet({
 app.use(express.json({ limit: '10kb' })); // Body limit is 10kb
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// Logging in development
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// // Logging in development
+// if (process.env.NODE_ENV === 'development') {
+//   app.use(morgan('dev'));
+// }
 
 // Apply rate limiting to all routes
 app.use(limiter);

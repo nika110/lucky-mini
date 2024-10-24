@@ -4,10 +4,12 @@ import { User } from '../models/User';
 import { IWalletConnection } from '../types/interfaces';
 import { ApiResponse } from '../types/api';
 import redisService from '../config/redis';
+import { SolanaVerification } from '../utils/solanaVerification';
+import { JwtService } from '../utils/jwt';
 
 export class UserController {
   /**
-   * Connect or update wallet for a user
+   * Connect wallet, verify signature and authenticate user
    * POST /api/v1/users/connect-wallet
    */
   static async connectWallet(
@@ -15,26 +17,31 @@ export class UserController {
     res: Response<ApiResponse<any>>
   ): Promise<void> {
     try {
-      const { public_key, wallet_type, telegram_id, data } = req.body;
+      const { public_key, wallet_type, telegram_id, signature } = req.body;
 
       // Validate wallet type
-      if (!['ton', 'solana'].includes(wallet_type)) {
+      if (wallet_type !== 'solana') {
         res.status(400).json({
           success: false,
-          error: 'Invalid wallet type. Must be either "ton" or "solana"'
+          error: 'Invalid wallet type. Must be "solana"'
         });
         return;
       }
 
-      // Check if public key is already connected to another user
-      const existingWalletUser = await User.findOne({
-        [`walletAddresses.${wallet_type}`]: public_key
-      });
+      // Generate message for verification
+      const message = `Connect wallet ${public_key} to Telegram ID ${telegram_id}`;
 
-      if (existingWalletUser && existingWalletUser.telegramId !== telegram_id) {
-        res.status(400).json({
+      // Verify signature
+      const isValid = await SolanaVerification.verifySignature(
+        message,
+        signature,
+        public_key
+      );
+
+      if (!isValid) {
+        res.status(401).json({
           success: false,
-          error: 'This wallet is already connected to another user'
+          error: 'Invalid signature'
         });
         return;
       }
@@ -55,30 +62,38 @@ export class UserController {
 
       try {
         // Find or create user
-        let user = await User.findOne({ telegramId: telegram_id });
+        let user = await User.findOne({
+          $or: [
+            { telegramId: telegram_id },
+            { [`walletAddresses.${wallet_type}`]: public_key }
+          ]
+        });
 
         if (!user) {
-          // Create new user if doesn't exist
+          // Create new user
           user = new User({
             telegramId: telegram_id,
-            walletAddresses: {},
+            walletAddresses: {
+              [wallet_type]: public_key
+            },
             referralCode: await UserController.generateUniqueReferralCode(),
           });
-        }
-
-        // Update wallet address
-        user.walletAddresses = {
-          ...user.walletAddresses,
-          [wallet_type]: public_key
-        };
-
-        // Store additional data if provided
-        if (data) {
-          // You might want to validate/process the data before storing
-          user.set(`walletData.${wallet_type}`, data);
+        } else {
+          // Update existing user's wallet if needed
+          user.walletAddresses = {
+            ...user.walletAddresses,
+            [wallet_type]: public_key
+          };
         }
 
         await user.save();
+
+        // Generate JWT
+        const token = JwtService.generateToken({
+          userId: user.id.toString(),
+          telegramId: user.telegramId,
+          walletAddress: public_key
+        });
 
         // Store in Redis for quick access
         await redisService.set(
@@ -87,17 +102,26 @@ export class UserController {
           86400 // 24 hours cache
         );
 
+        // Store JWT in Redis for blacklisting capability
+        await redisService.set(
+          `jwt:${user._id}:${token.slice(-10)}`,
+          'valid',
+          604800 // 7 days (matching JWT expiry)
+        );
+
         res.status(200).json({
           success: true,
           data: {
-            telegramId: user.telegramId,
-            walletAddresses: user.walletAddresses,
-            referralCode: user.referralCode
+            user: {
+              telegramId: user.telegramId,
+              walletAddresses: user.walletAddresses,
+              referralCode: user.referralCode
+            },
+            token
           },
           message: 'Wallet connected successfully'
         });
       } finally {
-        // Release the lock in finally block to ensure it's always released
         await redisService.releaseLock(`wallet:${telegram_id}:${wallet_type}`);
       }
     } catch (error) {
@@ -137,4 +161,11 @@ export class UserController {
 
     throw new Error('Could not generate unique referral code');
   }
+
+  static async GetUsers(
+    req: Request<{}, {}, IWalletConnection>,
+    res: Response<ApiResponse<any>>
+  ): Promise<void> {
+  }
+
 }

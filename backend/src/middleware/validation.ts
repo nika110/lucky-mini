@@ -30,8 +30,7 @@ export const validateWalletConnection = (
     });
   }
 
-  // Optional data validation
-  if (req.body.data && typeof req.body.data !== 'string') {
+  if (req.body.signature && typeof req.body.signature !== 'string') {
     return res.status(400).json({
       success: false,
       error: 'Data must be a string if provided'
