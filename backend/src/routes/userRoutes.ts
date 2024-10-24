@@ -1,12 +1,10 @@
+// src/routes/userRoutes.ts
 import express from 'express';
 import { UserController } from '../controllers/userController';
-import { auth } from '../middleware/auth';
+import { validateWalletConnection } from '../middleware/validation';
 
 const router = express.Router();
 
-router.post('/register', UserController.register);
-router.post('/connect-wallet', auth, UserController.connectWallet);
-router.get('/profile/:telegramId', auth, UserController.getProfile);
-router.get('/referrals/:telegramId', auth, UserController.getReferrals);
+router.post('/connect-wallet', validateWalletConnection, UserController.connectWallet);
 
 export default router;

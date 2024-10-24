@@ -21,7 +21,8 @@ export interface IUser {
   }
   
   export interface IWalletConnection {
-    telegramId: string;
-    walletType: 'ton' | 'solana';
-    address: string;
+    public_key: string;
+    wallet_type: 'ton' | 'solana';
+    telegram_id: string;
+    data?: string;
   }
