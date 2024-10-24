@@ -1,10 +1,13 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  base: '/lucky-mini/',  // Add this line
-  build: {
-    outDir: '../docs'
-  }
-})
+  plugins: [react(), tsconfigPaths(), nodePolyfills()],
+  server: {
+    port: 3100,
+  },
+  assetsInclude: ["**/*.ttf"],
+});

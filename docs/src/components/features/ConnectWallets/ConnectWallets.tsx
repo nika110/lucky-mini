@@ -9,6 +9,7 @@ import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import cl from "./ConnectWallets.module.css";
 import { SOLHugeIcon } from "@/components/shared/UI/Icons/SOLHuge";
 import { TONHuge } from "@/components/shared/UI/Icons/TONHuge";
+// import {} from "@solana/wallet-adapter-sdk";
 import { box } from "tweetnacl";
 import bs58 from "bs58";
 
