@@ -1,25 +1,35 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  content: [],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    container: {
-      padding: "0 1rem",
-      center: true,
-    },
     extend: {
+      container: {
+        center: true,
+        padding: "1rem",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontSize: {
+        xs: "7px",
+        sm: "9px",
+        base: "12px",
+        lg: "15px",
+        xl: "18px",
+        "2xl": "32px",
+      },
       colors: {
+        liquor: "var(--liquor)",
+        magnet: "var(--magnet)",
         gold: "var(--gold)",
         marigold: "var(--marigold)",
         corn: "var(--corn)",
-        dark: "var(--dark)",
-        inkwell: "var(--inkwell)",
+        "dark-bg": "var(--dark-bg)",
         nero: "var(--nero)",
+        inkwell: "var(--inkwell)",
         dim: "var(--dim)",
         rock: "var(--rock)",
         background: "hsl(var(--background))",

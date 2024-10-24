@@ -9,6 +9,17 @@
   font-display: swap;
 }
 
+:root {
+  --sat: env(safe-area-inset-bottom);
+}
+
+/* Предотвращаем скролл за пределами bottom sheet на iOS */
+.prevent-scroll {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -39,11 +50,40 @@
     --gold: #ffd700;
     --marigold: #ffc107;
     --corn: #ffe057;
-    --dark: #121212;
+    --dark-bg: #121212;
     --inkwell: #1e1e1e;
     --nero: #282828;
     --dim: #666;
     --rock: #aaa;
+    --magnet: #525252;
+    --liquor: #393939;
+  }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 216 12.2% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 @layer base {
@@ -55,9 +95,13 @@
   }
 }
 
+html {
+  background: var(--dark-bg) !important;
+}
+
 body {
   font-family: "PressStart2P-Regular", sans-serif !important;
-  background: var(--dark);
+  background: var(--dark-bg) !important;
   color: white;
   overflow-x: hidden;
   overflow-y: auto;
