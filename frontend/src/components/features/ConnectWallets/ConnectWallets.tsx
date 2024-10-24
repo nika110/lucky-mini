@@ -5,36 +5,71 @@ import {
   DrawerContent,
   DrawerTrigger,
 } from "@/components/shared/UI/drawer";
-
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import cl from "./ConnectWallets.module.css";
 import { SOLHugeIcon } from "@/components/shared/UI/Icons/SOLHuge";
 import { TONHuge } from "@/components/shared/UI/Icons/TONHuge";
+import { box } from "tweetnacl";
+import bs58 from "bs58";
 
 import {
   useTonConnectModal,
   useTonWallet,
   useTonConnectUI,
 } from "@tonconnect/ui-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { ROUTES } from "@/routes/routes";
+
+const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_BOT_NAME;
+const TELEGRAM_MINI_APP_NAME = import.meta.env.VITE_WEB_APP_NAME;
+
+const APP_CONFIG = {
+  name: "Your App Name",
+  icon: `${import.meta.env.VITE_APP_URL}/icon.png`,
+  url: import.meta.env.VITE_APP_URL,
+};
+
 const ConnectWallets: FC = () => {
   const [isOpenSelect, setIsOpenSelect] = useState(false);
 
-  // SOL
-  const { setVisible } = useWalletModal();
-  const { wallet, disconnect, publicKey } = useWallet();
+  const wallet = null;
 
   const handleSolConnect = () => {
-    setVisible(true);
-    setIsOpenSelect(false);
+    try {
+      const keypair = box.keyPair();
+      const publicKeyBase58 = bs58.encode(keypair.publicKey);
+
+      const telegramRedirectUrl = `tg://resolve?domain=${TELEGRAM_BOT_USERNAME}&appname=${TELEGRAM_MINI_APP_NAME}`;
+
+      const webAppData = window.Telegram?.WebApp?.initData;
+      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+
+      const phantomUrl = new URL("https://phantom.app/ul/v1/connect");
+
+      phantomUrl.searchParams.set("app_url", APP_CONFIG.url);
+      phantomUrl.searchParams.set(
+        "dapp_encryption_public_key",
+        publicKeyBase58
+      );
+      phantomUrl.searchParams.set(
+        "redirect_link",
+        `${APP_CONFIG.url}${
+          ROUTES.CONNECT_SOL
+        }/?tgWebAppData=${webAppData}&userId=${userId!.toString()}&appUrl=${telegramRedirectUrl}`
+      );
+
+      setIsOpenSelect(false);
+
+      window.location.href = phantomUrl.toString();
+    } catch (error) {
+      console.error("Error connecting to Phantom:", error);
+    }
   };
 
-  const handleDisconnectSolWallet = async () => {
-    disconnect();
+  const handleDisconnectSolWallet = () => {
+    console.log("disconnect");
   };
 
-  // TON
+  // TON wallet logic
   const tonWallet = useTonWallet();
   const [tonConnectUI] = useTonConnectUI();
   const { open: openTonConnect } = useTonConnectModal();
@@ -57,12 +92,12 @@ const ConnectWallets: FC = () => {
         >
           {tonWallet.account.address}
         </p>
-      ) : wallet && publicKey ? (
+      ) : wallet ? (
         <p
           className="max-w-[100px] truncate text-sm uppercase"
           onClick={handleDisconnectSolWallet}
         >
-          {publicKey + ""}
+          {wallet}
         </p>
       ) : (
         <Drawer open={isOpenSelect} onOpenChange={setIsOpenSelect}>

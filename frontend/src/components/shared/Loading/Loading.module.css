@@ -1,0 +1,44 @@
+.preloader {
+  position: relative;
+}
+
+.preloader .preloaderBox {
+  animation: loading-squares-scale 2s infinite;
+  border-radius: 0px;
+  position: absolute;
+  left: 0;
+  height: 15px;
+  width: 15px;
+  border: 1px solid #fff;
+  transform: transformZ(0);
+}
+
+.preloader .preloaderBox:nth-child(1n) {
+  left: -25px;
+  animation-delay: 0s;
+}
+
+.preloader .preloaderBox:nth-child(2n) {
+  left: 0;
+  animation-delay: 0.2s;
+}
+
+.preloader .preloaderBox:nth-child(3n) {
+  left: 25px;
+  animation-delay: 0.4s;
+}
+
+@keyframes loading-squares-scale {
+  0% {
+    background-color: #fff;
+    transform: scale(0.65);
+  }
+  50% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+  100% {
+    background-color: #FFD700;
+    transform: scale(0.65);
+  }
+}

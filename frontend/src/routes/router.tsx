@@ -5,6 +5,7 @@ import HomePage from "@/pages/HomePage/HomePage";
 import WalletPage from "@/pages/WalletPage/WalletPage";
 import LeadersPage from "@/pages/LeadersPage/LeadersPage";
 import ReferallsPage from "@/pages/ReferralPage/ReferralPage";
+import ConnectSolPage from "@/pages/ConnectSolPage/ConnectSolPage";
 
 // eslint-disable-next-line react-refresh/only-export-components
 const RouterPages: { path: string; element: JSX.Element }[] = [
@@ -23,6 +24,10 @@ const RouterPages: { path: string; element: JSX.Element }[] = [
   {
     path: ROUTES.REFERRAL,
     element: <ReferallsPage />,
+  },
+  {
+    path: ROUTES.CONNECT_SOL,
+    element: <ConnectSolPage />,
   },
 ];
 
