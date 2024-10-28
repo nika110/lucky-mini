@@ -33,6 +33,23 @@ interface WalletConnectionPayload {
   session: string;
 }
 
+interface SignatureInitParams {
+  telegramId: string;
+}
+
+interface SignatureInitBody {
+  message: string;
+  display?: "utf8" | "hex";
+}
+
+interface SignatureInitParams {
+    telegramId: string;
+}
+
+interface SignatureInitBody {
+    display?: "utf8" | "hex";
+}
+
 export class WalletController {
   public static async initSolanaWallet(
     req: Request<InitWalletParams>,
@@ -346,6 +363,108 @@ export class WalletController {
         success: false,
         message: "Internal server error during wallet connection",
         error: "INTERNAL_SERVER_ERROR",
+      });
+    }
+  }
+  
+  public static async getSignatureInitialization(
+    req: Request<SignatureInitParams, {}, SignatureInitBody>,
+    res: Response
+  ) {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(7);
+  
+    try {
+      console.log(`[${requestId}] Processing signature initialization request`);
+  
+      const { telegramId } = req.params;
+      const { display = "utf8" } = req.body;
+  
+      const user = await User.findOne({ telegramId }).select("wallet").lean();
+      const message = 'Sign this message'
+  
+      if (!user) {
+        throw new CustomError("USER_NOT_FOUND", "User not found");
+      }
+  
+      if (!user.wallet) {
+        throw new CustomError(
+          "WALLET_NOT_INITIALIZED",
+          "Wallet has not been initialized for this user"
+        );
+      }
+  
+      const wallet = user.wallet.walletData as ISolanaWallet;
+  
+      if (!wallet.shared_key || !wallet.session) {
+        throw new CustomError(
+          "INVALID_WALLET_STATE",
+          "Wallet connection not established"
+        );
+      }
+  
+      const payload = {
+        message: bs58.encode(Buffer.from(message)),
+        session: wallet.session,
+        display
+      };
+  
+      const nonce = nacl.randomBytes(24);
+  
+      const messageUint8 = Buffer.from(JSON.stringify(payload));
+      let encryptedData: Uint8Array;
+  
+      try {
+        encryptedData = nacl.box.after(
+          messageUint8,
+          nonce,
+          bs58.decode(wallet.shared_key)
+        );
+      } catch (error) {
+        throw new CustomError(
+          "ENCRYPTION_ERROR",
+          "Failed to encrypt signature payload"
+        );
+      }
+  
+      if (!encryptedData) {
+        throw new CustomError(
+          "ENCRYPTION_ERROR",
+          "Failed to generate encrypted payload"
+        );
+      }
+  
+      const duration = Date.now() - startTime;
+      console.log(
+        `[${requestId}] Signature initialization completed in ${duration}ms`
+      );
+  
+      return res.status(200).json({
+        success: true,
+        data: bs58.encode(encryptedData),
+        nonce: bs58.encode(nonce),
+        message: "Signature initialization successful"
+      });
+  
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(
+        `[${requestId}] Signature initialization failed after ${duration}ms:`,
+        error
+      );
+  
+      if (error instanceof CustomError) {
+        return res.status(error.getStatusCode()).json({
+          success: false,
+          message: error.message,
+          error: error.getCode()
+        });
+      }
+  
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error during signature initialization",
+        error: "INTERNAL_SERVER_ERROR"
       });
     }
   }
