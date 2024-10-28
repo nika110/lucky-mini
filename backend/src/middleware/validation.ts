@@ -1,39 +1,67 @@
-// src/middleware/validation.ts
-import { Request, Response, NextFunction } from 'express';
-import { IWalletConnection } from '../types/interfaces';
+import { Request, Response, NextFunction } from "express";
+import { IUserGet, IUserRegistration } from "../types/interfaces";
+import {
+  InitWalletParams,
+  WalletConnection,
+} from "../controllers/walletController";
 
-export const validateWalletConnection = (
-  req: Request<{}, {}, IWalletConnection>,
+export const validateInitUser = (
+  req: Request<{}, {}, IUserRegistration>,
   res: Response,
   next: NextFunction
 ) => {
-  const { public_key, wallet_type, telegram_id } = req.body;
+  const { telegramId } = req.body;
 
-  if (!public_key || typeof public_key !== 'string') {
+  if (!telegramId || typeof telegramId !== "string") {
     return res.status(400).json({
       success: false,
-      error: 'Valid public_key is required'
+      error: "Valid telegram_id is required",
     });
   }
 
-  if (!wallet_type || !['ton', 'solana'].includes(wallet_type)) {
+  next();
+};
+
+export const validateGetUser = (
+  req: Request<{}, {}, IUserGet>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { telegramId } = req.body;
+
+  if (!telegramId || typeof telegramId !== "string") {
     return res.status(400).json({
       success: false,
-      error: 'Valid wallet_type is required (ton or solana)'
+      error: "Valid telegramId is required",
     });
   }
 
-  if (!telegram_id || typeof telegram_id !== 'string') {
+  next();
+};
+
+export const validateWalletConnection = (
+  req: Request<InitWalletParams, {}, WalletConnection>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { telegramId } = req.params;
+  const {
+    phantom_encryption_public_key,
+    nonce: phantom_nonce,
+    data: phantom_data,
+  } = req.body;
+
+  if (!telegramId || typeof telegramId !== "string") {
     return res.status(400).json({
       success: false,
-      error: 'Valid telegram_id is required'
+      error: "Valid telegramId is required",
     });
   }
 
-  if (req.body.signature && typeof req.body.signature !== 'string') {
+  if (!phantom_encryption_public_key || !phantom_nonce || !phantom_data) {
     return res.status(400).json({
       success: false,
-      error: 'Data must be a string if provided'
+      error: "Valid phantom data is required",
     });
   }
 

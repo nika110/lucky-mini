@@ -1,6 +1,6 @@
 // src/config/redis.ts
-import Redis, { Redis as RedisType } from 'ioredis';
-import * as dotenv from 'dotenv';
+import Redis, { Redis as RedisType } from "ioredis";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 
@@ -10,7 +10,7 @@ class RedisService {
   private isConnected: boolean = false;
 
   private constructor() {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
     this.client = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
@@ -22,40 +22,43 @@ class RedisService {
       },
       reconnectOnError: (err: Error) => {
         // Only reconnect on specific errors
-        const targetError = 'READONLY';
+        console.warn(
+          `⚠️ Redis reconnection triggered by error: ${err.message}`
+        );
+        const targetError = "READONLY";
         if (err.message.includes(targetError)) {
           return true; // Reconnect on READONLY error
         }
         return false;
-      }
+      },
     });
 
     // Connection event handlers
-    this.client.on('connect', () => {
-      console.log('🚀 Redis client connecting...');
+    this.client.on("connect", () => {
+      console.log("🚀 Redis client connecting...");
     });
 
-    this.client.on('ready', () => {
+    this.client.on("ready", () => {
       this.isConnected = true;
-      console.log('✅ Redis client connected and ready');
+      console.log("✅ Redis client connected and ready");
     });
 
-    this.client.on('error', (err: Error) => {
+    this.client.on("error", (err: Error) => {
       this.isConnected = false;
-      console.error('❌ Redis client error:', err);
+      console.error("❌ Redis client error:", err);
     });
 
-    this.client.on('close', () => {
+    this.client.on("close", () => {
       this.isConnected = false;
-      console.log('🔄 Redis client disconnected');
+      console.log("🔄 Redis client disconnected");
     });
 
-    this.client.on('reconnecting', () => {
-      console.log('🔄 Redis client reconnecting...');
+    this.client.on("reconnecting", () => {
+      console.log("🔄 Redis client reconnecting...");
     });
 
     // Handle process termination
-    process.on('SIGINT', async () => {
+    process.on("SIGINT", async () => {
       await this.disconnect();
       process.exit(0);
     });
@@ -70,7 +73,7 @@ class RedisService {
 
   public getClient(): RedisType {
     if (!this.isConnected) {
-      console.warn('⚠️ Warning: Redis client is not connected');
+      console.warn("⚠️ Warning: Redis client is not connected");
     }
     return this.client;
   }
@@ -80,9 +83,9 @@ class RedisService {
       try {
         await this.client.quit();
         this.isConnected = false;
-        console.log('👋 Redis client disconnected gracefully');
+        console.log("👋 Redis client disconnected gracefully");
       } catch (error) {
-        console.error('❌ Error disconnecting Redis client:', error);
+        console.error("❌ Error disconnecting Redis client:", error);
         this.client.disconnect(false);
       }
     }
@@ -91,18 +94,22 @@ class RedisService {
   public async healthCheck(): Promise<boolean> {
     try {
       const ping = await this.client.ping();
-      return ping === 'PONG';
+      return ping === "PONG";
     } catch (error) {
-      console.error('❌ Redis health check failed:', error);
+      console.error("❌ Redis health check failed:", error);
       return false;
     }
   }
 
   // Utility wrapper methods for common Redis operations
-  public async set(key: string, value: string, expireSeconds?: number): Promise<'OK' | null> {
+  public async set(
+    key: string,
+    value: string,
+    expireSeconds?: number
+  ): Promise<"OK" | null> {
     try {
       if (expireSeconds) {
-        return await this.client.set(key, value, 'EX', expireSeconds);
+        return await this.client.set(key, value, "EX", expireSeconds);
       }
       return await this.client.set(key, value);
     } catch (error) {
@@ -139,16 +146,19 @@ class RedisService {
   }
 
   // Method for handling locks (useful for raffle operations)
-  public async acquireLock(lockKey: string, ttlSeconds: number): Promise<boolean> {
+  public async acquireLock(
+    lockKey: string,
+    ttlSeconds: number
+  ): Promise<boolean> {
     try {
       const result = await this.client.set(
         `lock:${lockKey}`,
-        'locked',
-        'EX',
+        "locked",
+        "EX",
         ttlSeconds,
-        'NX'
+        "NX"
       );
-      return result === 'OK';
+      return result === "OK";
     } catch (error) {
       console.error(`❌ Error acquiring lock ${lockKey}:`, error);
       return false;
