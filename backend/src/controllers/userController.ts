@@ -1,19 +1,12 @@
-import bs58 from "bs58";
-// src/controllers/userController.ts
 import { Request, Response } from "express";
 import { User } from "../models/User";
 import {
-  ISolanaWallet,
   IUserGet,
   IUserRegistration,
-  IWallet,
   IWalletConnection,
 } from "../types/interfaces";
 import { ApiResponse } from "../types/api";
 import redisService from "../config/redis";
-import { SolanaVerification } from "../utils/solanaVerification";
-import { JwtService } from "../utils/jwt";
-import nacl from "tweetnacl";
 
 export class UserController {
   public static async initUser(
@@ -71,7 +64,7 @@ export class UserController {
       return res.status(201).json({
         success: true,
         data: newUser.toObject(),
-        message: "User created successfully", 
+        message: "User created successfully",
       });
     } catch (error) {}
   }
@@ -108,66 +101,6 @@ export class UserController {
       });
     }
   }
-
-  public static async initSolanaWallet(
-    req: Request<IUserGet>,
-    res: Response<ApiResponse<any>>
-  ) {
-    try {
-      const { telegramId } = req.params;
-
-      const user = await User.findOne({ telegramId })
-        .select("-__v") // stuff users
-        .lean(); // return object instead of Mongoose doc
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-          data: null,
-        });
-      }
-
-      const wallet = user.wallet;
-
-      if (!wallet) {
-        try {
-          const pairOfKeys = nacl.box.keyPair();
-          const publicKey58 = bs58.encode(pairOfKeys.publicKey);
-          const secretKey58 = bs58.encode(pairOfKeys.secretKey);
-
-          const nonce = nacl.randomBytes(24);
-
-          const walletData = {
-            server_public_key: publicKey58,
-            server_secret_key: secretKey58,
-            nonce: bs58.encode(nonce),
-          } as ISolanaWallet;
-
-          const wallet = {
-            walletType: "solana",
-            walletData,
-          } as IWallet;
-
-          await User.findOneAndUpdate({ telegramId }, { $set: { wallet } });
-        } catch (error) {}
-      }
-
-      return res.status(200).json({
-        success: true,
-        data: {},
-        message: "User retrieved successfully",
-      });
-    } catch (error) {
-      console.error("Error in getUser:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error while fetching user data",
-        data: null,
-      });
-    }
-  }
-
   // Helper function to generate unique referral code
   static async generateUniqueReferralCode(): Promise<string> {
     const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

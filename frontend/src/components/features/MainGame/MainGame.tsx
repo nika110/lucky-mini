@@ -1,15 +1,82 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { FC, useState } from "react";
-import cl from "./MainGame.module.css";
+import { FC, useEffect, useState } from "react";
+// import cl from "./MainGame.module.css";
 import NumberFormatter from "@/components/shared/NumberFormatter/NumberFormatter";
 import { Button } from "@/components/shared/UI/button";
 import { Chip } from "@/components/shared/UI/Icons/Chip";
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import { Copy } from "@/components/shared/UI/Icons/Copy";
 import { formatNumber } from "@/helpers/formatCount";
+import { LOCAL_STORAGE_KEYS } from "@/utils/localStorage";
+import {
+  useGetUserQuery,
+  useInitializeUserMutation,
+} from "@/redux/services/user.api";
+import bs58 from "bs58";
+import { AppInitParams } from "@/types/user";
 
 const MainGame: FC = () => {
-  const [prizePool, setPrizePool] = useState(134567);
+  const [prizePool] = useState(134567);
+
+  const isInitLocal = localStorage.getItem(LOCAL_STORAGE_KEYS.TG_INIT_USER);
+  const [initializeUser] = useInitializeUserMutation();
+
+  useGetUserQuery(window.Telegram!.WebApp!.initDataUnsafe!.user!.id!, {
+    skip: !isInitLocal || !window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
+  });
+
+  useEffect(() => {
+    const initUserMut = (
+      userId: number,
+      userInitials: string,
+      referralCode?: string
+    ) => {
+      const body: {
+        telegramId: string;
+        username?: string;
+        referralCode?: string;
+      } = {
+        telegramId: userId.toString(),
+        username: userInitials,
+      };
+      if (referralCode) {
+        body.referralCode = referralCode;
+      }
+      initializeUser(body)
+        .then((res) => {
+          if (res.data && "success" in res.data && res.data.success) {
+            localStorage.setItem(LOCAL_STORAGE_KEYS.TG_INIT_USER, "true");
+          }
+        })
+        .catch(() => {
+          // alert(JSON.stringify(error));
+        });
+    };
+
+    const isInit = localStorage.getItem(LOCAL_STORAGE_KEYS.TG_INIT_USER);
+    const tgUserInfo = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!isInit && isInit !== "true" && tgUserInfo) {
+      const userId = tgUserInfo.id;
+      const userInitials =
+        `${tgUserInfo.first_name} ${tgUserInfo.last_name}`.trim();
+      const startParams = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+      if (startParams) {
+        try {
+          const dataFromStartParam: AppInitParams = JSON.parse(
+            Buffer.from(bs58.decode(startParams))
+              .toString("utf8")
+              .replace(/^'|'$/g, "")
+          );
+          if (dataFromStartParam.referralCode)
+            initUserMut(userId, userInitials, dataFromStartParam.referralCode);
+        } catch (error) {
+          // do smth
+        }
+      } else {
+        initUserMut(userId, userInitials);
+      }
+    }
+  }, [initializeUser]);
 
   return (
     <section className={"pt-16"}>

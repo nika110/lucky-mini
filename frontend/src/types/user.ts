@@ -1,22 +1,4 @@
-export enum BLOCKCHAINS {
-  SOL = "solana",
-  TON = "ton",
-}
-
-export interface SolanaWallet {
-  session: string | null; // part of JWT token
-  nonce: string;
-  phantom_account_public_key: string | null; // Public key of the phantom account
-}
-
-export interface TonWallet {
-  address: string;
-}
-
-export interface Wallet {
-  walletType: BLOCKCHAINS;
-  walletData: SolanaWallet | TonWallet;
-}
+import { Wallet } from "./wallet";
 
 export interface User {
   telegramId: string;
@@ -29,4 +11,8 @@ export interface User {
   balance: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AppInitParams {
+  referralCode?: string;
 }

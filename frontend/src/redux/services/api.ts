@@ -50,5 +50,5 @@ export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithRetry,
   endpoints: () => ({}),
-  tagTypes: ["User"],
+  tagTypes: ["User", "Wallet"],
 });

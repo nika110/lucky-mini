@@ -6,3 +6,10 @@ export interface ApiError {
     details?: Record<string, unknown>;
   };
 }
+
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+} 

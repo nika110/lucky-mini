@@ -9,8 +9,8 @@ import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import cl from "./ConnectWallets.module.css";
 import { SOLHugeIcon } from "@/components/shared/UI/Icons/SOLHuge";
 import { TONHuge } from "@/components/shared/UI/Icons/TONHuge";
-import { box } from "tweetnacl";
-import bs58 from "bs58";
+// import { box } from "tweetnacl";
+// import bs58 from "bs58";
 
 import {
   useTonConnectModal,
@@ -18,6 +18,9 @@ import {
   useTonConnectUI,
 } from "@tonconnect/ui-react";
 import { ROUTES } from "@/routes/routes";
+import { useGetSolWalletMutation } from "@/redux/services/wallet.api";
+import { LOCAL_STORAGE_KEYS } from "@/utils/localStorage";
+import { DEEP_LINKS } from "@/utils/phantom";
 
 const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_BOT_NAME;
 const TELEGRAM_MINI_APP_NAME = import.meta.env.VITE_WEB_APP_NAME;
@@ -29,38 +32,54 @@ const APP_CONFIG = {
 };
 
 const ConnectWallets: FC = () => {
+  const isInitLocal = localStorage.getItem(LOCAL_STORAGE_KEYS.TG_INIT_USER);
   const [isOpenSelect, setIsOpenSelect] = useState(false);
 
   const wallet = null;
 
+  // mutations
+
+  const [getSolanaWallet] = useGetSolWalletMutation();
+
   const handleSolConnect = () => {
     try {
-      const keypair = box.keyPair();
-      const publicKeyBase58 = bs58.encode(keypair.publicKey);
-
-      const telegramRedirectUrl = `tg://resolve?domain=${TELEGRAM_BOT_USERNAME}&appname=${TELEGRAM_MINI_APP_NAME}`;
-      const webAppData = window.Telegram?.WebApp?.initData;
       const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      const phantomUrl = new URL("https://phantom.app/ul/v1/connect");
+      // alert(userId);
 
-      phantomUrl.searchParams.set("app_url", APP_CONFIG.url);
-      phantomUrl.searchParams.set(
-        "dapp_encryption_public_key",
-        publicKeyBase58
-      );
-      phantomUrl.searchParams.set(
-        "redirect_link",
-        `${APP_CONFIG.url}${
-          ROUTES.CONNECT_SOL
-        }/?tgWebAppData=${webAppData}&userId=${userId!.toString()}&appUrl=${telegramRedirectUrl}`
-      );
+      if (isInitLocal && userId) {
+        getSolanaWallet({ telegramId: userId.toString() })
+          .unwrap()
+          .then((res) => {
+            if (res.data) {
+              if ("success" in res && res.success) {
+                const { server_public_key } = res.data.walletData;
+                const redirectUrl = `https://t.me/${TELEGRAM_BOT_USERNAME}/${TELEGRAM_MINI_APP_NAME}`;
+                const phantomUrl = new URL(DEEP_LINKS.CONNECT);
 
-      const isTelegramMobileApp = window.Telegram?.WebApp?.platform !== "web";
+                // SET URL INFORMATION
+                phantomUrl.searchParams.set("app_url", APP_CONFIG.url);
+                phantomUrl.searchParams.set(
+                  "dapp_encryption_public_key",
+                  server_public_key
+                );
+                phantomUrl.searchParams.set(
+                  "redirect_link",
+                  `${APP_CONFIG.url}${
+                    ROUTES.CONNECT_SOL
+                  }/?userId=${userId!.toString()}&appUrl=${redirectUrl}&app_encryption_public_key=${server_public_key}`
+                );
 
-      if (isTelegramMobileApp) {
-        window.Telegram?.WebApp?.openLink(phantomUrl.toString(), {
-          try_instant_view: false,
-        });
+                // LINKING
+                const isTelegramMobileApp =
+                  window.Telegram?.WebApp?.platform !== "web";
+                if (isTelegramMobileApp) {
+                  window.Telegram?.WebApp?.openLink(phantomUrl.toString(), {
+                    try_instant_view: false,
+                  });
+                }
+              }
+            }
+          });
       }
     } catch (error) {
       console.error("Error connecting to Phantom:", error);

@@ -1,21 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { FC, useEffect } from "react";
 import CubesLoading from "@/components/shared/Loading/CubesLoading";
 import { LogoFull } from "@/components/shared/UI/Icons/LogoFull";
 import { useSearchParams } from "react-router-dom";
-import bs58 from "bs58";
-import { randomBytes } from "tweetnacl";
 import { ROUTES } from "@/routes/routes";
-// import { decodeBase58 } from "@/helpers/base58";
-
-const MESSAGE_SIGN =
-  "Verify wallet to prove ownership of this wallet, to make actions on this website No SOL is charged";
-
-interface SignMessagePayload {
-  message: string;
-  session: string;
-  display: "utf8" | "hex";
-}
+import {
+  useConnectWalletMutation,
+  useInitializeSignMessageMutation,
+} from "@/redux/services/wallet.api";
+import { DEEP_LINKS } from "@/utils/phantom";
 
 const ConnectSolPage: FC = () => {
   const [searchParams] = useSearchParams();
@@ -24,87 +16,76 @@ const ConnectSolPage: FC = () => {
   const appUrl = searchParams.get("appUrl");
   const errorCode = searchParams.get("errorCode");
   const phantomPublicKey = searchParams.get("phantom_encryption_public_key");
+  const appPublicKey = searchParams.get("app_encryption_public_key");
   const nonce = searchParams.get("nonce");
   const dataConnect = searchParams.get("data");
 
+  const [connectWallet] = useConnectWalletMutation();
+  const [initiSignMessage] = useInitializeSignMessageMutation();
+
   useEffect(() => {
     const handleSignMessage = async () => {
-      if (!phantomPublicKey || !userIdQuery || !dataConnect || !nonce) return;
+      if (!phantomPublicKey || !appPublicKey || !userIdQuery || !dataConnect || !nonce) return;
 
-      try {
-        const signMessageUrl = new URL("https://phantom.app/ul/v1/signMessage");
+      connectWallet({
+        telegramId: userIdQuery,
+        phantom_encryption_public_key: phantomPublicKey,
+        nonce,
+        data: dataConnect,
+      })
+        .unwrap()
+        .then((res) => {
+          if (res.data && "success" in res && res.success) {
+            // INITI SIGN MESSAGE
+            initiSignMessage({
+              telegramId: userIdQuery,
+            })
+              .unwrap()
+              .then((res) => {
+                if (res.data && "success" in res && res.success) {
+                  const { payload, nonce: signNonce } = res.data;
 
-        signMessageUrl.searchParams.set("app_url", appUrl!);
-
-        // const nonce = randomBytes(32);
-        // const nonceBase58 = bs58.encode(nonce);
-        signMessageUrl.searchParams.set("nonce", nonce);
-
-        signMessageUrl.searchParams.set(
-          "dapp_encryption_public_key",
-          phantomPublicKey
-        );
-
-        signMessageUrl.searchParams.set(
-          "redirect_link",
-          `${window.location.origin}${ROUTES.SIGN_SOL}/?userId=${userIdQuery}&tgWebAppData=${webAppDataQuery}&appUrl=${appUrl}&originalMessage=${MESSAGE_SIGN}`
-        );
-
-        const decoderUtf8 = new TextDecoder("utf-8");
-        const decodedData = bs58.decode(dataConnect);
-        console.log(decoderUtf8.decode(decodedData));
-
-        // const payloadData: SignMessagePayload = {
-        //   message: bs58.encode(Buffer.from(MESSAGE_SIGN)),
-        //   session: sessionToken,
-        //   display: "utf8",
-        // };
-
-        // const payload: SignMessagePayload = {
-        //   message: bs58.encode(Buffer.from(MESSAGE_SIGN)),
-        //   session: sessionToken,
-        //   display: "utf8",
-        // };
-
-        // const nonce = randomBytes(32);
-        // const nonceBase58 = bs58.encode(nonce);
-
-        // signMessageUrl.searchParams.set(
-        //   "dapp_encryption_public_key",
-        //   phantomPublicKey
-        // );
-        // signMessageUrl.searchParams.set("nonce", nonceBase58);
-        // signMessageUrl.searchParams.set(
-        //   "redirect_link",
-        //   encodeURIComponent(
-        //     `${window.location.origin}${ROUTES.SIGN_SOL}/?userId=${userIdQuery}&tgWebAppData=${webAppDataQuery}&appUrl=${appUrl}&originalMessage=${MESSAGE_SIGN}`
-        //   )
-        // );
-
-        // const encryptedPayload = JSON.stringify(payload);
-        // signMessageUrl.searchParams.set("payload", encryptedPayload);
-
-        // window.location.href = signMessageUrl.toString();
-      } catch (error) {
-        console.error("Error initiating message signing:", error);
-        window.open(appUrl!, "_blank");
-      }
+                  const signMessageUrl = new URL(DEEP_LINKS.SIGN_MESSAGE);
+                  signMessageUrl.searchParams.set("nonce", signNonce);
+                  signMessageUrl.searchParams.set(
+                    "dapp_encryption_public_key",
+                    appPublicKey
+                  );
+                  signMessageUrl.searchParams.set(
+                    "redirect_link",
+                    `${window.location.origin}${ROUTES.SIGN_SOL}/?userId=${userIdQuery}&appUrl=${appUrl}`
+                  );
+                  signMessageUrl.searchParams.set("payload", payload);
+                  alert(signMessageUrl.toString());
+                  window.location.href = signMessageUrl.toString();
+                }
+              })
+              .catch((err) => {
+                alert(JSON.stringify(err));
+              });
+          }
+        })
+        .catch((err) => {
+          alert(JSON.stringify(err));
+        });
     };
 
     if (phantomPublicKey && !errorCode && dataConnect) {
       handleSignMessage();
     } else if (errorCode || !userIdQuery || !webAppDataQuery || !appUrl) {
-      // window.open(appUrl!, "_blank");
       alert("Something went wrong, please try again");
     }
   }, [
     phantomPublicKey,
+    appPublicKey,
     userIdQuery,
     webAppDataQuery,
     appUrl,
     errorCode,
     dataConnect,
     nonce,
+    connectWallet,
+    initiSignMessage,
   ]);
 
   return (

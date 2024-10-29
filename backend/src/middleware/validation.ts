@@ -15,7 +15,7 @@ export const validateInitUser = (
   if (!telegramId || typeof telegramId !== "string") {
     return res.status(400).json({
       success: false,
-      error: "Valid telegram_id is required",
+      error: "Valid telegramId is required",
     });
   }
 
@@ -23,11 +23,11 @@ export const validateInitUser = (
 };
 
 export const validateGetUser = (
-  req: Request<{}, {}, IUserGet>,
+  req: Request<{ telegramId: string }>,
   res: Response,
   next: NextFunction
 ) => {
-  const { telegramId } = req.body;
+  const { telegramId } = req.params;
 
   if (!telegramId || typeof telegramId !== "string") {
     return res.status(400).json({

@@ -14,12 +14,17 @@ export const userApi = api.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
-    getUser: build.query<User, string>({
+    getUser: build.query<User, number>({
       query: (telegramId) => ({
-        url: `users/${telegramId}`,
+        url: `/users/${telegramId}`,
+        method: "GET",
       }),
+      providesTags: ["User"],
     }),
   }),
 });
 
-export const { useInitializeUserMutation, useGetUserQuery } = userApi;
+export const {
+  useInitializeUserMutation,
+  useGetUserQuery,
+} = userApi;
