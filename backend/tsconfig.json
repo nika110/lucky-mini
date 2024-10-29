@@ -12,6 +12,6 @@
       "resolveJsonModule": true,
       "sourceMap": true
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "src/grpc-server.ts"],
     "exclude": ["node_modules"]
   }

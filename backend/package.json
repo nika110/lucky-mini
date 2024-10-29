@@ -9,6 +9,8 @@
     "watch-ts": "tsc -w"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.12.2",
+    "@grpc/proto-loader": "^0.7.13",
     "@solana/web3.js": "^1.95.4",
     "@types/jsonwebtoken": "^9.0.7",
     "bs58": "^6.0.0",

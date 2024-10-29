@@ -1,7 +1,7 @@
-// src/server.ts
 import mongoose from 'mongoose';
 import redisService from './src/config/redis';
 import app from './app';
+import GrpcServer from './src/grpc-server';
 
 interface ServerConfig {
   port: number;
@@ -12,12 +12,15 @@ class Server {
   private static instance: Server;
   private config: ServerConfig;
   private isShuttingDown: boolean = false;
+  private server: any;
+  private grpcServer: GrpcServer;
 
   private constructor() {
     this.config = {
       port: parseInt(process.env.PORT || '5000', 10),
       mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/raffle_app'
     };
+    this.grpcServer = new GrpcServer();
   }
 
   public static getInstance(): Server {
@@ -53,7 +56,6 @@ class Server {
   }
 
   private setupProcessHandlers(): void {
-    // Handle process termination
     const shutdown = async (signal: string) => {
       if (this.isShuttingDown) return;
       
@@ -61,7 +63,7 @@ class Server {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
       
       try {
-        // Close server
+        // Close HTTP server
         if (this.server) {
           await new Promise((resolve) => {
             this.server.close((err) => {
@@ -73,6 +75,10 @@ class Server {
           });
           console.log('✅ HTTP server closed');
         }
+
+        // Stop gRPC server
+        await this.grpcServer.stop();
+        console.log('✅ gRPC server closed');
 
         // Disconnect Redis
         await redisService.disconnect();
@@ -123,8 +129,6 @@ class Server {
     }
   }
 
-  private server: any;
-
   public async start(): Promise<void> {
     try {
       console.log(`🚀 Starting server in ${process.env.NODE_ENV} mode...`);
@@ -142,6 +146,10 @@ class Server {
         throw new Error('Redis health check failed');
       }
 
+      // Start gRPC server
+      this.grpcServer.start();
+      console.log('🔌 gRPC server started');
+
       // Start HTTP server
       this.server = app.listen(this.config.port, () => {
         console.log(`
@@ -156,7 +164,7 @@ class Server {
         const isHealthy = await this.healthCheck();
         if (!isHealthy && !this.isShuttingDown) {
           console.error('❌ Service unhealthy. Initiating shutdown...');
-          await shutdown('UNHEALTHY');
+          await this.setupProcessHandlers();
         }
       }, 30000); // Check every 30 seconds
 
@@ -175,7 +183,3 @@ server.start().catch((error) => {
 });
 
 export default Server;
-
-function shutdown(arg0: string) {
-  throw new Error('Function not implemented.');
-}
