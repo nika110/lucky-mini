@@ -3,24 +3,25 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY fastapi/requirements.txt .
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the FastAPI application
-COPY fastapi/ .
-COPY protos/ ./protos/
+# Copy source code
+COPY src/ /app/
 
-# Generate gRPC code
-RUN python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. ./protos/service.proto
+# Generate gRPC code from protos
+RUN python -m grpc_tools.protoc \
+    -I./protos \
+    --python_out=. \
+    --grpc_python_out=. \
+    ./protos/*.proto
 
-# Expose port
-EXPOSE 8000
+# Set Python path
+ENV PYTHONPATH=/app
 
-# Start the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["python", "main.py"]

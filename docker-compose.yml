@@ -1,53 +1,27 @@
-version: "3.8"
+# docker-compose.yml
+version: '3.8'
 
 services:
-  # frontend:
-  #   image: node:18
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - VITE_API_URL=http://backend:5000
-
-  backend:
+  app:
+    container_name: lucky_fastapi
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./fastapi
+      dockerfile: Dockerfile
     ports:
-      - "5000:5000"
-      - "50051:50051"
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/raffle_app
-      - REDIS_URL=redis://redis:6379
-      - NODE_ENV=development
+      - "50052:50052"
+      - "8766:8766"
     depends_on:
       - mongodb
       - redis
-    volumes:
-      - ./backend:/app
-      - ./protos:/app/protos
-    working_dir: /app
-
-  fastapi:
-    build:
-      context: .
-      dockerfile: fastapi/Dockerfile
-    ports:
-      - "8000:8000"
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/raffle_app
-      - REDIS_URL=redis://redis:6379
-      - GRPC_SERVER_HOST=backend
-      - GRPC_SERVER_PORT=50051
-    depends_on:
-      - backend
-      - mongodb
-      - redis
-    volumes:
-      - ./fastapi:/app
-      - ./protos:/app/protos
-    working_dir: /app
+      - MONGODB_URL=mongodb://mongodb:27017
+      - REDIS_URL=redis://redis
+      - WEBSOCKET_HOST=0.0.0.0
+      - WEBSOCKET_PORT=8766
+    restart: always
 
   mongodb:
+    container_name: lucky_db
     image: mongo:latest
     ports:
       - "27017:27017"
@@ -55,9 +29,13 @@ services:
       - mongodb_data:/data/db
 
   redis:
+    container_name: lucky_redis
     image: redis:alpine
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 volumes:
   mongodb_data:
+  redis_data:
