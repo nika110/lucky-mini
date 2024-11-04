@@ -1,12 +1,10 @@
 import grpc.aio
 from . import raffle_pb2, raffle_pb2_grpc
 from .raffle_service import RaffleService
-from .winner_service import WinnerService
 
 class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
     def __init__(self):
         self.raffle_service = RaffleService()
-        self.winner_service = WinnerService()
 
     async def PurchaseTickets(
         self,
@@ -24,3 +22,20 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             )
         except Exception as e:
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
+
+    async def GetCurrentRaffle(self, request, context):
+        try:
+            current_raffle = await self.raffle_service.get_current_raffle()
+            if not current_raffle:
+                context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
+
+            total_pool = float(await self.raffle_service.get_total_pool(current_raffle.id) or 0)
+
+            return raffle_pb2.GetCurrentRaffleResponse(
+                raffle_id=current_raffle.id,
+                end_time=int(current_raffle.end_time.timestamp()),
+                current_pool=total_pool
+            )
+        except Exception as e:
+            context.abort(grpc.StatusCode.INTERNAL, str(e))
+

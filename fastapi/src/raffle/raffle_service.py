@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 import uuid
 from typing import List, Tuple
 import logging
-from .config import settings
-from .database import Database
+from config import settings
+from database import Database
 from .raffle_models import Raffle, Ticket
 from .raffle_repo import RaffleRepository
 from .ticket_repo import TicketRepository
@@ -21,6 +21,8 @@ class RaffleService:
         current_raffle = await self.raffle_repo.get_current_raffle()
         return current_raffle
 
+    async def get_total_pool(self, raffle_id: str) -> float:
+        return float(await Database.redis.hget(f"raffle:{raffle_id}", "total_pool") or 0)
 
     async def _create_new_raffle(self) -> Raffle:
         raffle = Raffle(
@@ -34,16 +36,12 @@ class RaffleService:
             await self.raffle_repo.create_raffle(raffle)
             await Database.redis.hset(f"raffle:{raffle.id}", "total_pool", 0)
 
-            # Broadcast new raffle creation
-            await self.websocket_manager.broadcast_pool_update(
-                raffle.id,
-                {
-                    "type": "new_raffle",
-                    "raffle_id": raffle.id,
-                    "start_time": raffle.start_time.isoformat(),
-                    "end_time": raffle.end_time.isoformat()
-                }
-            )
+            await self.websocket_manager.broadcast_update({
+                "type": "new_raffle",
+                "raffle_id": raffle.id,
+                "start_time": raffle.start_time.isoformat(),
+                "end_time": raffle.end_time.isoformat()
+            })
 
             logger.info(f"Created new raffle {raffle.id}, ending at {raffle.end_time}")
             return raffle
@@ -55,7 +53,6 @@ class RaffleService:
     async def purchase_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:
         current_raffle = await self.get_current_raffle()
         ticket_numbers = []
-
 
         for _ in range(ticket_count):
             ticket_number = str(uuid.uuid4())
@@ -69,14 +66,11 @@ class RaffleService:
 
             # Update Redis and broadcast the new pool size
             new_pool = await Database.redis.hincrby(f"raffle:{current_raffle.id}", "total_pool", 1)
-            await self.websocket_manager.broadcast_pool_update(
-                current_raffle.id,
-                {
-                    "type": "pool_update",
-                    "raffle_id": current_raffle.id,
-                    "total_pool": new_pool
-                }
-            )
+            await self.websocket_manager.broadcast_update({
+                "type": "pool_update",
+                "raffle_id": current_raffle.id,
+                "total_pool": new_pool
+            })
 
             ticket_numbers.append(ticket_number)
 

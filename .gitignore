@@ -1,2 +1,4 @@
 fastapi/venv/
 fastapi/__pycache__/
+.idea/
+venv/

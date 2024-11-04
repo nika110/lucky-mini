@@ -2,21 +2,43 @@ syntax = "proto3";
 
 package auth;
 
+import "user.proto";
+
 service AuthService {
-  rpc GenerateTokens (TokenRequest) returns (TokenResponse) {}
+    // Authenticate or create user with Telegram ID
+    rpc AuthenticateTelegram(AuthTelegramRequest) returns (AuthTelegramResponse);
+
+    // Update TON wallet
+    rpc UpdateTonWallet(UpdateTonWalletRequest) returns (UpdateTonWalletResponse);
+
+    // Validate token
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
 }
 
-message TokenRequest {
-  string user_id = 1;
-  string username = 2;
-  string email = 3;
-  repeated string roles = 4;
-  map<string, string> additional_data = 5;
+message AuthTelegramRequest {
+    string telegram_id = 1;
+    optional string referred_by = 2;
 }
 
-message TokenResponse {
-  string access_token = 1 ;
-  string token_type = 2;
-  int32 expires_in = 3;
-  string refresh_token = 4;
+message AuthTelegramResponse {
+    string token = 1;
+    user.UserProfile user = 2;
+}
+
+message UpdateTonWalletRequest {
+    string telegram_id = 1;
+    string ton_public_key = 2;
+}
+
+message UpdateTonWalletResponse {
+    user.UserProfile user = 1;
+}
+
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool is_valid = 1;
+    user.UserProfile user = 2;
 }

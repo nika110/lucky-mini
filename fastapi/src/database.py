@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from redis import asyncio as aioredis
-from .config import settings
+from config import settings
 
 class Database:
     client: AsyncIOMotorClient = None

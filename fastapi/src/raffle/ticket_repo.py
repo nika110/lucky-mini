@@ -1,6 +1,6 @@
 from typing import List
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .database import Database
+from database import Database
 from .raffle_models import Ticket
 
 class TicketRepository:

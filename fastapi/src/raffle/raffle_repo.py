@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .database import Database
+from database import Database
 from .raffle_models import Raffle, Winner
 
 class RaffleRepository:

@@ -4,7 +4,10 @@ import grpc.aio
 from concurrent import futures
 import websockets
 import logging
-from raffle.database import Database
+
+from database import Database
+from users import auth_pb2_grpc
+from users.auth_servicer import AuthServicer
 from raffle.raffle_servicer import RaffleServicer
 from raffle import raffle_pb2_grpc
 from raffle.websocket_server import websocket_handler
@@ -19,9 +22,11 @@ async def init_db():
     db = Database.get_db()
 
     # Create indexes
-    await db.raffles.create_index("end_time")
-    await db.tickets.create_index("raffle_id")
-    await db.tickets.create_index([("raffle_id", 1), ("user_id", 1)])
+    await db.raffles.create_index("is_active")
+    await db.users.create_index("telegram_id", unique=True)
+
+    # await db.tickets.create_index("raffle_id")
+    # await db.tickets.create_index([("raffle_id", 1), ("user_id", 1)])
 
 async def ensure_active_raffle():
     raffle_service = RaffleService()
@@ -35,6 +40,7 @@ async def serve():
 
     server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
     raffle_pb2_grpc.add_RaffleServiceServicer_to_server(RaffleServicer(), server)
+    auth_pb2_grpc.add_AuthServiceServicer_to_server(AuthServicer(), server)
     grpc_addr = "[::]:50052"
     server.add_insecure_port(grpc_addr)
     await server.start()
@@ -47,7 +53,7 @@ async def serve():
 
     # Start WebSocket server
     async with websockets.serve(websocket_handler, ws_host, ws_port):
-        logger.info(f"WebSocket server started on ws://{ws_host}:{ws_port}")
+        logger.info(f"WebSocket server started on ws://{ws_host}:{ws_port}/ws")
         logger.info(f"gRPC server started on {grpc_addr}")
         try:
             await asyncio.gather(
@@ -60,6 +66,7 @@ async def serve():
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
             raise
+
 
 if __name__ == "__main__":
     asyncio.run(serve())
