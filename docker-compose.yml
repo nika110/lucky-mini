@@ -1,5 +1,5 @@
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -19,6 +19,36 @@ services:
       - WEBSOCKET_HOST=0.0.0.0
       - WEBSOCKET_PORT=8766
     restart: always
+    networks:
+      - main
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5000:5000"
+      - "50051:50051"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - REDIS_URL=redis://redis:6379
+      - WEBSOCKET_HOST=0.0.0.0
+      - WEBSOCKET_PORT=8766
+      - NODE_ENV=development
+      - RAFFLE_SERVICE_HOST=0.0.0.0
+      - AUTH_SERVICE_HOST=0.0.0.0
+      - RAFFLE_SERVICE_PORT=50052
+      - AUTH_SERVICE_PORT=50052
+    depends_on:
+      - mongodb
+      - redis
+      - app
+    volumes:
+      - ./backend:/app
+      - ./protos:/app/protos
+    working_dir: /app
+    networks:
+      - main
 
   mongodb:
     container_name: lucky_db
@@ -27,6 +57,8 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+    networks:
+      - main
 
   redis:
     container_name: lucky_redis
@@ -35,6 +67,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - main
+
+networks:
+  main:
+    driver: bridge
 
 volumes:
   mongodb_data:
