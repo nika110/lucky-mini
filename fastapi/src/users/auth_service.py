@@ -32,11 +32,10 @@ class AuthService:
         user = await self.user_repo.get_user_by_telegram_id(telegram_id)
 
         if not user:
-            # Create new user
             user = User(
                 id=str(uuid.uuid4()),
                 telegram_id=telegram_id,
-                ton_public_key="",  # Empty until user adds wallet
+                ton_public_key="",
                 balance=0.0,
                 created_at=datetime.utcnow(),
                 xp=0,

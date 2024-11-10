@@ -47,6 +47,8 @@ class WinnerService:
                         position=idx + 1
                     ))
 
+
+
         # Send the raffle ended message first
         await self.websocket_manager.broadcast_update({
             "type": "raffle_ended",

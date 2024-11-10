@@ -5,9 +5,21 @@ package raffle;
 service RaffleService {
     rpc PurchaseTickets (PurchaseTicketsRequest) returns (PurchaseTicketsResponse);
     rpc GetCurrentRaffle (GetCurrentRaffleRequest) returns (GetCurrentRaffleResponse);
+    rpc IncreaseBalance (IncreaseBalanceRequest) returns (IncreaseBalanceResponse);
     rpc GetRaffleResults (GetRaffleResultsRequest) returns (GetRaffleResultsResponse);
 }
 
+message IncreaseBalanceRequest {
+    string user_id = 1;
+    double amount = 2;
+}
+
+message IncreaseBalanceResponse {
+    double balance = 1;
+}
+// TODO: INCREASE BALANCE AND ADD EVERYTHING WITH USER
+// TODO: XP SYSTEM
+// TODO: REFERRAL SYSTEM
 message PurchaseTicketsRequest {
     string user_id = 1;
     int32 ticket_count = 2;
@@ -23,11 +35,10 @@ message GetCurrentRaffleRequest {}
 message GetCurrentRaffleResponse {
     string raffle_id = 1;
     int64 end_time = 2;
-    double current_pool = 4;
+    double current_pool = 3;
 }
 
 message GetRaffleResultsRequest {
-    string raffle_id = 1;
 }
 
 message Winner {
@@ -37,6 +48,9 @@ message Winner {
 }
 
 message GetRaffleResultsResponse {
-    repeated Winner winners = 1;
-    double total_pool = 2;
+    string raffle_id = 1;
+    int64 start_time = 2;
+    int64 end_time = 3;
+    double total_pool = 4;
+    repeated Winner winners = 5;
 }

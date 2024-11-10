@@ -50,6 +50,10 @@ class RaffleService:
             logger.error(f"Error creating new raffle: {str(e)}")
             raise
 
+    async def purchase_real_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:
+        pass
+
+
     async def purchase_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:
         current_raffle = await self.get_current_raffle()
         ticket_numbers = []
@@ -75,3 +79,12 @@ class RaffleService:
             ticket_numbers.append(ticket_number)
 
         return ticket_numbers, current_raffle.id
+
+    async def get_last_completed_raffle(self):
+        logger.info("Getting last completed raffle from service")
+        raffle = await self.raffle_repo.get_last_completed_raffle()
+        if raffle:
+            logger.info(f"Found raffle with ID: {raffle.id}")
+        else:
+            logger.info("No raffle found")
+        return raffle
