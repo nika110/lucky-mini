@@ -13,4 +13,6 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_DAYS: int = 360
 
+    TELEGRAM_BOT_TOKEN:str = "YOUR_BOT_TOKEN"
+
 settings = Settings()

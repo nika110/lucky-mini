@@ -15,3 +15,8 @@ class TicketRepository:
     async def get_raffle_tickets(self, raffle_id: str) -> List[Ticket]:
         cursor = self.collection.find({"raffle_id": raffle_id})
         return [Ticket(**ticket) for ticket in await cursor.to_list(None)]
+
+    async def get_user_tickets(self, user_id: str) -> List[Ticket]:
+        cursor = self.collection.find({"user_id": user_id}).sort("purchase_time", -1)
+        tickets = await cursor.to_list(None)
+        return [Ticket(**ticket) for ticket in tickets]

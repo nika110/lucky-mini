@@ -7,7 +7,12 @@ class User(BaseModel):
     telegram_id: str
     ton_public_key: str
     balance: float
-
     created_at: datetime
     xp: int
     referred_by: Optional[str]
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda dt: int(dt.timestamp())
+        }

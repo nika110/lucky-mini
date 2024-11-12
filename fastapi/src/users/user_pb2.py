@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nuser.proto\x12\x04user\"\xa1\x01\n\x0bUserProfile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x13\n\x0btelegram_id\x18\x02 \x01(\t\x12\x16\n\x0eton_public_key\x18\x03 \x01(\t\x12\x0f\n\x07\x62\x61lance\x18\x04 \x01(\x01\x12\x12\n\ncreated_at\x18\x05 \x01(\x03\x12\n\n\x02xp\x18\x06 \x01(\x05\x12\x18\n\x0breferred_by\x18\x07 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_referred_byb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nuser.proto\x12\x04user\"\xa1\x01\n\x0bUserProfile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x13\n\x0btelegram_id\x18\x02 \x01(\t\x12\x16\n\x0eton_public_key\x18\x03 \x01(\t\x12\x0f\n\x07\x62\x61lance\x18\x04 \x01(\x01\x12\x12\n\ncreated_at\x18\x05 \x01(\x03\x12\n\n\x02xp\x18\x06 \x01(\x05\x12\x18\n\x0breferred_by\x18\x07 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_referred_by\"Z\n\x06Ticket\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x15\n\rticket_number\x18\x02 \x01(\t\x12\x0f\n\x07user_id\x18\x03 \x01(\t\x12\x15\n\rpurchase_time\x18\x04 \x01(\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,4 +33,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_USERPROFILE']._serialized_start=21
   _globals['_USERPROFILE']._serialized_end=182
+  _globals['_TICKET']._serialized_start=184
+  _globals['_TICKET']._serialized_end=274
 # @@protoc_insertion_point(module_scope)
