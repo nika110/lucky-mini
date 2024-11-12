@@ -145,26 +145,47 @@ class Server {
     }
   }
 
-  async waitForGrpcServices(retries = 5, delay = 2000): Promise<void> {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const health = await this.grpcManager.healthCheck();
-        if (health.auth && health.raffle) {
-          console.log("Successfully connected to all gRPC services");
-          return;
-        }
-        console.log(
-          `Attempt ${i + 1}/${retries}: Waiting for gRPC services...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      } catch (error) {
-        console.error(`Attempt ${i + 1}/${retries} failed:`, error);
-        if (i === retries - 1) throw error;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+  async waitForGrpcServices(retries = 15, delay = 2000): Promise<void> {
+  console.log("Waiting for gRPC services to be ready...");
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      const health = await this.grpcManager.healthCheck();
+      
+      console.log("gRPC services health check result:", {
+        attempt: i + 1,
+        raffle: health.raffle ? "✅" : "❌",
+        auth: health.auth ? "✅" : "❌"
+      });
+
+      if (health.auth && health.raffle) {
+        console.log("✅ Successfully connected to all gRPC services");
+        return;
+      }
+      
+      if (i < retries - 1) {
+        const nextDelay = delay * Math.pow(1.5, Math.min(i, 4)); // Exponential backoff with max
+        console.log(`Retrying in ${nextDelay}ms... (Attempt ${i + 1}/${retries})`);
+        await new Promise((resolve) => setTimeout(resolve, nextDelay));
+      }
+    } catch (error: any) {
+      console.error(`Attempt ${i + 1}/${retries} failed:`, {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        stack: error.stack
+      });
+      
+      if (i < retries - 1) {
+        const nextDelay = delay * Math.pow(1.5, Math.min(i, 4));
+        console.log(`Retrying in ${nextDelay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, nextDelay));
       }
     }
-    throw new Error("Failed to connect to gRPC services after all retries");
   }
+  
+  throw new Error("Failed to connect to gRPC services after all retries");
+}
 
   public async start(): Promise<void> {
     try {

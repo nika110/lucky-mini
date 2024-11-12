@@ -21,6 +21,8 @@ services:
     restart: always
     networks:
       - main
+    volumes:
+      - ./fastapi/src:/app
 
   backend:
     build:
@@ -35,8 +37,8 @@ services:
       - WEBSOCKET_HOST=0.0.0.0
       - WEBSOCKET_PORT=8766
       - NODE_ENV=development
-      - RAFFLE_SERVICE_HOST=0.0.0.0
-      - AUTH_SERVICE_HOST=0.0.0.0
+      - RAFFLE_SERVICE_HOST=app
+      - AUTH_SERVICE_HOST=app
       - RAFFLE_SERVICE_PORT=50052
       - AUTH_SERVICE_PORT=50052
     depends_on:

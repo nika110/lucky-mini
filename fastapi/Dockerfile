@@ -14,12 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY src/ /app/
 
-# Generate gRPC code from protos
-RUN python -m grpc_tools.protoc \
-    -I./protos \
-    --python_out=. \
-    --grpc_python_out=. \
-    ./protos/*.proto
+RUN ls
+
+RUN pwd
+
+RUN ls /app/users
 
 # Set Python path
 ENV PYTHONPATH=/app

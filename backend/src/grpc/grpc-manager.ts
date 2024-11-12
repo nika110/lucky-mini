@@ -8,17 +8,15 @@ export class GrpcManager {
   private isShuttingDown: boolean = false;
 
   private constructor() {
-    const RAFFLE_HOST = process.env.RAFFLE_SERVICE_HOST || "python-backend";
-    const AUTH_HOST = process.env.AUTH_SERVICE_HOST || "python-backend";
-    const RAFFLE_PORT = process.env.RAFFLE_SERVICE_PORT || "50051";
+    const RAFFLE_HOST = process.env.RAFFLE_SERVICE_HOST || "app";
+    const AUTH_HOST = process.env.AUTH_SERVICE_HOST || "app";
+    const RAFFLE_PORT = process.env.RAFFLE_SERVICE_PORT || "50052";
     const AUTH_PORT = process.env.AUTH_SERVICE_PORT || "50052";
 
     this.raffleClient = new RaffleClient(`${RAFFLE_HOST}:${RAFFLE_PORT}`);
     this.authClient = new AuthClient(`${AUTH_HOST}:${AUTH_PORT}`);
 
-    console.log(
-      `Connecting to Raffle service at: ${RAFFLE_HOST}:${RAFFLE_PORT}`
-    );
+    console.log(`Connecting to Raffle service at: ${RAFFLE_HOST}:${RAFFLE_PORT}`);
     console.log(`Connecting to Auth service at: ${AUTH_HOST}:${AUTH_PORT}`);
   }
 
@@ -53,22 +51,35 @@ export class GrpcManager {
     try {
       await this.raffleClient.getCurrentRaffle();
       health.raffle = true;
-    } catch (error) {
-      console.error("Raffle service health check failed:", error);
+    } catch (error: any) {
+      console.error("Raffle service health check failed:", {
+        code: error.code,
+        details: error.details,
+        message: error.message,
+        stack: error.stack
+      });
     }
 
     try {
-      await this.authClient.validateToken("health-check");
-    } catch (error) {
-      if (error instanceof Error) {
-        if (
-          (error as any).code === grpc.status.UNAUTHENTICATED ||
-          (error as any).code === grpc.status.INVALID_ARGUMENT
-        ) {
-          health.auth = true;
-        } else {
-          console.error("Auth service health check failed:", error);
-        }
+      const response = await this.authClient.validateToken("health-check");
+      console.log("Auth validateToken response:", response);
+      health.auth = true;
+    } catch (error: any) {
+      if (error.code === grpc.status.UNAUTHENTICATED || 
+          error.code === grpc.status.INVALID_ARGUMENT) {
+        console.log("Expected auth error (service is up):", {
+          code: error.code,
+          details: error.details
+        });
+        health.auth = true;
+      } else {
+        console.error("Auth service health check failed:", {
+          code: error.code,
+          details: error.details,
+          message: error.message,
+          stack: error.stack,
+          metadata: error.metadata?.getMap()
+        });
       }
     }
 

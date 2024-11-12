@@ -2,3 +2,6 @@ fastapi/venv/
 fastapi/__pycache__/
 .idea/
 venv/
+fastapi/src/__pycache__/
+fastapi/src/users/__pycache__/
+fastapi/src/raffle/__pycache__/

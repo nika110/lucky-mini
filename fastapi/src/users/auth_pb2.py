@@ -22,7 +22,8 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-import user_pb2 as user__pb2
+
+from .user_pb2 import *
 
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x04\x61uth\x1a\nuser.proto\"T\n\x13\x41uthTelegramRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x18\n\x0breferred_by\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_referred_by\"F\n\x14\x41uthTelegramResponse\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile\"E\n\x16UpdateTonWalletRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x16\n\x0eton_public_key\x18\x02 \x01(\t\":\n\x17UpdateTonWalletResponse\x12\x1f\n\x04user\x18\x01 \x01(\x0b\x32\x11.user.UserProfile\"%\n\x14ValidateTokenRequest\x12\r\n\x05token\x18\x01 \x01(\t\"J\n\x15ValidateTokenResponse\x12\x10\n\x08is_valid\x18\x01 \x01(\x08\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile2\xf6\x01\n\x0b\x41uthService\x12M\n\x14\x41uthenticateTelegram\x12\x19.auth.AuthTelegramRequest\x1a\x1a.auth.AuthTelegramResponse\x12N\n\x0fUpdateTonWallet\x12\x1c.auth.UpdateTonWalletRequest\x1a\x1d.auth.UpdateTonWalletResponse\x12H\n\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponseb\x06proto3')

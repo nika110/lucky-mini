@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import raffle_pb2 as raffle__pb2
+from . import raffle_pb2 as raffle__pb2
 
 GRPC_GENERATED_VERSION = '1.67.1'
 GRPC_VERSION = grpc.__version__
