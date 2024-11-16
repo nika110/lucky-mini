@@ -157,3 +157,21 @@ class AuthService:
         except Exception as e:
             logger.error(f"Error validating token: {e}")
             return None, []
+
+    async def update_user_referred_by(self, user_id: str, referred_by: str):
+        user = await self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        if user.telegram_id == referred_by:
+            raise ValueError("you can not be your own referral")
+
+        user_referred_by = await self.user_repo.get_user_by_telegram_id(referred_by)
+        if not user_referred_by:
+            raise ValueError("Referral user not found")
+
+        user.referred_by = referred_by
+        await self.user_repo.update_user(user)
+        return user
+
+

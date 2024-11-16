@@ -28,6 +28,12 @@ class UserRepository:
     async def telegram_id_exists(self, telegram_id: str) -> bool:
         return bool(await self.collection.find_one({"telegram_id": telegram_id}))
 
+    async def update_user_xp(self, user_id: str, xp: int):
+         return await self.collection.update_one(
+            {"id": user_id},
+            {"$inc": {"xp": xp}}
+        )
+
     async def update_user(self, user: User) -> bool:
         result = await self.collection.update_one(
             {"id": user.id},

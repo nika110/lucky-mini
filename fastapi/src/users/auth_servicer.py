@@ -145,3 +145,15 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             logger.error(f"Error in ValidateToken: {str(e)}", exc_info=True)
             await context.abort(grpc.StatusCode.INTERNAL, str(e))
             return auth_pb2.ValidateTokenResponse()
+
+    async def UpdateUserReferral(self, request, context):
+        try:
+            await self.auth_service.update_user_referred_by(
+                user_id=request.user_id,
+                referred_by=request.referred_by
+            )
+            return auth_pb2.UpdateUserReferralResponse()
+        except ValueError as e:
+            context.abort(grpc.StatusCode.NOT_FOUND, str(e))
+        except Exception as e:
+            context.abort(grpc.StatusCode.INTERNAL, str(e))

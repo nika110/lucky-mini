@@ -44,6 +44,11 @@ class RaffleServiceStub(object):
                 request_serializer=raffle__pb2.GetCurrentRaffleRequest.SerializeToString,
                 response_deserializer=raffle__pb2.GetCurrentRaffleResponse.FromString,
                 _registered_method=True)
+        self.IncreaseBalance = channel.unary_unary(
+                '/raffle.RaffleService/IncreaseBalance',
+                request_serializer=raffle__pb2.IncreaseBalanceRequest.SerializeToString,
+                response_deserializer=raffle__pb2.IncreaseBalanceResponse.FromString,
+                _registered_method=True)
         self.GetRaffleResults = channel.unary_unary(
                 '/raffle.RaffleService/GetRaffleResults',
                 request_serializer=raffle__pb2.GetRaffleResultsRequest.SerializeToString,
@@ -61,6 +66,12 @@ class RaffleServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetCurrentRaffle(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def IncreaseBalance(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -84,6 +95,11 @@ def add_RaffleServiceServicer_to_server(servicer, server):
                     servicer.GetCurrentRaffle,
                     request_deserializer=raffle__pb2.GetCurrentRaffleRequest.FromString,
                     response_serializer=raffle__pb2.GetCurrentRaffleResponse.SerializeToString,
+            ),
+            'IncreaseBalance': grpc.unary_unary_rpc_method_handler(
+                    servicer.IncreaseBalance,
+                    request_deserializer=raffle__pb2.IncreaseBalanceRequest.FromString,
+                    response_serializer=raffle__pb2.IncreaseBalanceResponse.SerializeToString,
             ),
             'GetRaffleResults': grpc.unary_unary_rpc_method_handler(
                     servicer.GetRaffleResults,
@@ -145,6 +161,33 @@ class RaffleService(object):
             '/raffle.RaffleService/GetCurrentRaffle',
             raffle__pb2.GetCurrentRaffleRequest.SerializeToString,
             raffle__pb2.GetCurrentRaffleResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def IncreaseBalance(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/raffle.RaffleService/IncreaseBalance',
+            raffle__pb2.IncreaseBalanceRequest.SerializeToString,
+            raffle__pb2.IncreaseBalanceResponse.FromString,
             options,
             channel_credentials,
             insecure,

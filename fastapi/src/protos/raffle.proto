@@ -11,11 +11,11 @@ service RaffleService {
 
 message IncreaseBalanceRequest {
     string user_id = 1;
-    double amount = 2;
+    int32 amount = 2;
 }
 
 message IncreaseBalanceResponse {
-    double balance = 1;
+    int32 balance = 1;
 }
 // TODO: INCREASE BALANCE AND ADD EVERYTHING WITH USER
 // TODO: XP SYSTEM

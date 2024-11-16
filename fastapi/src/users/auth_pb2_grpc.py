@@ -49,6 +49,11 @@ class AuthServiceStub(object):
                 request_serializer=auth__pb2.ValidateTokenRequest.SerializeToString,
                 response_deserializer=auth__pb2.ValidateTokenResponse.FromString,
                 _registered_method=True)
+        self.UpdateUserReferral = channel.unary_unary(
+                '/auth.AuthService/UpdateUserReferral',
+                request_serializer=auth__pb2.UpdateUserReferralRequest.SerializeToString,
+                response_deserializer=auth__pb2.UpdateUserReferralResponse.FromString,
+                _registered_method=True)
 
 
 class AuthServiceServicer(object):
@@ -75,6 +80,12 @@ class AuthServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpdateUserReferral(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AuthServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -92,6 +103,11 @@ def add_AuthServiceServicer_to_server(servicer, server):
                     servicer.ValidateToken,
                     request_deserializer=auth__pb2.ValidateTokenRequest.FromString,
                     response_serializer=auth__pb2.ValidateTokenResponse.SerializeToString,
+            ),
+            'UpdateUserReferral': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateUserReferral,
+                    request_deserializer=auth__pb2.UpdateUserReferralRequest.FromString,
+                    response_serializer=auth__pb2.UpdateUserReferralResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -175,6 +191,33 @@ class AuthService(object):
             '/auth.AuthService/ValidateToken',
             auth__pb2.ValidateTokenRequest.SerializeToString,
             auth__pb2.ValidateTokenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateUserReferral(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/auth.AuthService/UpdateUserReferral',
+            auth__pb2.UpdateUserReferralRequest.SerializeToString,
+            auth__pb2.UpdateUserReferralResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -50,8 +50,9 @@ class RaffleService:
             logger.error(f"Error creating new raffle: {str(e)}")
             raise
 
-    async def purchase_real_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:
+    async def purchase_real_tickets(self, ticket_count: int) -> Tuple[List[str], str]:
         pass
+        
 
 
     async def purchase_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:

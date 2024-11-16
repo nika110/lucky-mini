@@ -2,6 +2,9 @@ import grpc.aio
 from . import raffle_pb2, raffle_pb2_grpc
 from .raffle_service import RaffleService
 import logging
+from users.user_repo import UserRepository
+
+from config import settings
 
 from users.balance_service import BalanceService
 
@@ -12,6 +15,7 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
     def __init__(self):
         self.raffle_service = RaffleService()
         self.balance_service = BalanceService()
+        self.user_service = UserRepository()
 
     async def PurchaseTickets(
         self,
@@ -19,18 +23,17 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
         context: grpc.aio.ServicerContext,
     ) -> raffle_pb2.PurchaseTicketsResponse:
         try:
-            #check if user exists
             user = await self.balance_service.get_user_balance(request.user_id)
             if not user:
                 await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
                 return raffle_pb2.PurchaseTicketsResponse()
 
-            # if user.balance < request.ticket_count:
-            #     await context.abort(
-            #         grpc.StatusCode.FAILED_PRECONDITION,
-            #         f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
-            #     )
-            #     return raffle_pb2.PurchaseTicketsResponse()
+            if user.balance < request.ticket_count:
+                await context.abort(
+                    grpc.StatusCode.FAILED_PRECONDITION,
+                    f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
+                )
+                return raffle_pb2.PurchaseTicketsResponse()
 
 
             ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
@@ -38,6 +41,12 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
                 request.ticket_count
             )
 
+            decrease_balance = await self.balance_service.update_user_balance(request.user_id, -request.ticket_count)
+
+            check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
+            if check_if_user_has_referrer.referred_by != "":
+                referrer = await self.user_service.get_user_by_telegram_id(check_if_user_has_referrer.referred_by)
+                await self.user_service.update_user_xp(referrer.id,(request.ticket_count*settings.REFERRAL_UPDATE_PER_TICKET_BUY))
 
             return raffle_pb2.PurchaseTicketsResponse(
                 ticket_numbers=ticket_numbers,
@@ -119,3 +128,18 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             logger.error(f"Error in GetRaffleResults: {e}")
             await context.abort(grpc.StatusCode.INTERNAL, f"Internal error: {str(e)}")
             return raffle_pb2.GetRaffleResultsResponse()
+
+    async def IncreaseBalance(self, request, context):
+        try:
+            user_id = request.user_id
+            amount = request.amount
+
+            success = await self.balance_service.update_user_balance(user_id, amount)
+            if not success:
+                await context.abort(grpc.StatusCode.INTERNAL, "Failed to update user balance")
+                return raffle_pb2.IncreaseBalanceResponse()
+
+            return raffle_pb2.IncreaseBalanceResponse()
+        except Exception as e:
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
+            return raffle_pb2.IncreaseBalanceResponse()

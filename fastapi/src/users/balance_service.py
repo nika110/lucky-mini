@@ -28,7 +28,7 @@ class BalanceService:
         try:
             result = await self.collection.update_one(
                 {"id": user_id},
-                {"$set": {"balance": balance}}
+                {"$inc": {"balance": balance}}
             )
             success = result.modified_count > 0
             if not success:
