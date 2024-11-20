@@ -23,47 +23,57 @@ class AuthService:
         self.ticket_repo = TicketRepository()
 
         self.secret_key = hmac.new(
-            settings.TELEGRAM_BOT_TOKEN.encode(),
-            "WebAppData".encode(),
-            hashlib.sha256
-        ).digest()
+                "WebAppData".encode(),
+                settings.TELEGRAM_BOT_TOKEN.encode(),
+                hashlib.sha256
+            ).digest()
 
-    def verify_telegram_auth(self, auth_data: str) -> Optional[Dict]:
+    def verify_telegram_auth(self, init_data: str) -> Optional[Dict]:
         try:
-            parsed_data = dict(parse_qsl(auth_data))
+            # Split and create key-value pairs, excluding hash
+            data_check_array = [
+                chunk.split("=")
+                for chunk in init_data.split("&")
+                if not chunk.startswith("hash=")
+            ]
 
-            if 'hash' not in parsed_data:
-                return None
-
-            telegram_hash = parsed_data['hash']
-            data_to_check = parsed_data.copy()
-            data_to_check.pop('hash')
-
-            data_check_string = '\n'.join(
-                f"{k}={v}" for k, v in sorted(data_to_check.items())
+            # Sort by keys and create data check string with unquoted values
+            data_check_string = "\n".join(
+                f"{rec[0]}={unquote(rec[1])}"
+                for rec in sorted(data_check_array, key=lambda x: x[0])
             )
 
+            # Get hash from original data
+            hash_str = dict(chunk.split("=") for chunk in init_data.split("&")).get("hash")
+            if not hash_str:
+                return None
+
+            # Generate secret key
+
+            # Calculate hash
             calculated_hash = hmac.new(
                 self.secret_key,
                 data_check_string.encode(),
                 hashlib.sha256
             ).hexdigest()
 
-            if calculated_hash != telegram_hash:
+            logger.debug(f"Data check string: {data_check_string}")
+            logger.debug(f"Calculated hash: {calculated_hash}")
+            logger.debug(f"Received hash: {hash_str}")
+
+            if calculated_hash != hash_str:
                 return None
 
-            auth_date = int(parsed_data.get('auth_date', 0))
-            if datetime.utcnow().timestamp() - auth_date > 86400:
-                return None
-
+            # Parse user data if validation successful
+            parsed_data = dict(parse_qsl(init_data))
             if 'user' in parsed_data:
                 return json.loads(unquote(parsed_data['user']))
 
             return None
 
         except Exception as e:
+            logger.error(f"Verification error: {str(e)}")
             return None
-
     async def authenticate_telegram(
             self,
             telegram_id: str,
