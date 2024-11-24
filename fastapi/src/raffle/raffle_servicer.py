@@ -28,13 +28,12 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
                 await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
                 return raffle_pb2.PurchaseTicketsResponse()
 
-           if user.balance < request.ticket_count:
-               await context.abort(
-                   grpc.StatusCode.FAILED_PRECONDITION,
-                   f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
-               )
-               return raffle_pb2.PurchaseTicketsResponse()
-
+            if user.balance < request.ticket_count:
+                await context.abort(
+                    grpc.StatusCode.FAILED_PRECONDITION,
+                    f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
+                )
+                return raffle_pb2.PurchaseTicketsResponse()
 
             ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
                 request.user_id,
@@ -46,7 +45,10 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
             if check_if_user_has_referrer.referred_by != "":
                 referrer = await self.user_service.get_user_by_telegram_id(check_if_user_has_referrer.referred_by)
-                await self.user_service.update_user_xp(referrer.id,(request.ticket_count*settings.REFERRAL_UPDATE_PER_TICKET_BUY))
+                await self.user_service.update_user_xp(
+                    referrer.id,
+                    (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                )
 
             return raffle_pb2.PurchaseTicketsResponse(
                 ticket_numbers=ticket_numbers,
