@@ -69,15 +69,16 @@ class RaffleService:
             )
             await self.ticket_repo.create_ticket(ticket)
 
-            # Update Redis and broadcast the new pool size
-            new_pool = await Database.redis.hincrby(f"raffle:{current_raffle.id}", "total_pool", 1)
-            await self.websocket_manager.broadcast_update({
-                "type": "pool_update",
-                "raffle_id": current_raffle.id,
-                "total_pool": new_pool
-            })
-
             ticket_numbers.append(ticket_number)
+
+
+        new_pool = await Database.redis.hincrby(f"raffle:{current_raffle.id}", "total_pool", ticket_count)
+
+        await self.websocket_manager.broadcast_update({
+            "type": "pool_update",
+            "raffle_id": current_raffle.id,
+            "total_pool": new_pool
+        })
 
         return ticket_numbers, current_raffle.id
 
@@ -89,3 +90,7 @@ class RaffleService:
         else:
             logger.info("No raffle found")
         return raffle
+
+    async def update_winner_balance(self, ton_public_key: str, amount: float):
+        pass
+        #winners = get_winners_list()

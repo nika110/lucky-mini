@@ -28,12 +28,12 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
                 await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
                 return raffle_pb2.PurchaseTicketsResponse()
 
-            if user.balance < request.ticket_count:
-                await context.abort(
-                    grpc.StatusCode.FAILED_PRECONDITION,
-                    f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
-                )
-                return raffle_pb2.PurchaseTicketsResponse()
+           if user.balance < request.ticket_count:
+               await context.abort(
+                   grpc.StatusCode.FAILED_PRECONDITION,
+                   f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
+               )
+               return raffle_pb2.PurchaseTicketsResponse()
 
 
             ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
@@ -52,6 +52,7 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
                 ticket_numbers=ticket_numbers,
                 raffle_id=raffle_id
             )
+
         except Exception as e:
             context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
 

@@ -3,6 +3,7 @@ import json
 from typing import Set
 import websockets
 from websockets.server import WebSocketServerProtocol
+import asyncio
 
 class WebSocketManager:
     _instance = None
@@ -27,6 +28,7 @@ class WebSocketManager:
         for websocket in self.connections:
             try:
                 await websocket.send(message)
+                await asyncio.sleep(2)
             except websockets.exceptions.ConnectionClosed:
                 websockets_to_remove.add(websocket)
 
