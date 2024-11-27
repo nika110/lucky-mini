@@ -10,6 +10,8 @@ from .raffle_repo import RaffleRepository
 from .raffle_service import RaffleService
 from .websocket_server import WebSocketManager
 
+import requests
+
 logger = logging.getLogger(__name__)
 
 class WinnerService:
@@ -60,7 +62,7 @@ class WinnerService:
         logger.info(f"Raffle {raffle_id} ended with {len(winners)} winners. Waiting 20 seconds before starting new raffle...")
 
         # Wait for 20 seconds
-        await asyncio.sleep(20)
+        await asyncio.sleep(settings.SLEEP_DURATION_AFTER_EACH_RAFFLE_FINISH)
 
         # Create new raffle after delay
         new_raffle = await self.raffle_service._create_new_raffle()

@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     DEV_TEAM_PERCENTAGE: float = 0.05
     LUCKY_LIQ_POOL_PERCENTAGE: float = 0.05
     SECONDARY_WINNERS_PERCENTAGE: float = 0.2 # - 4%
+    SLEEP_DURATION_AFTER_EACH_RAFFLE_FINISH: int = 30
+    BROADCAST_INTERVAL:int = 5 #seconds
+
 
     JWT_SECRET_KEY: str = "your-secret-key-move-to-env"
     JWT_ALGORITHM: str = "HS256"
@@ -15,6 +18,6 @@ class Settings(BaseSettings):
 
     REFERRAL_UPDATE_PER_TICKET_BUY: float = 0.1
 
-    TELEGRAM_BOT_TOKEN:str = "YOUR_BOT_TOKEN"
+    TELEGRAM_BOT_TOKEN:str = "5938982333:AAH8vafdqHtFCIctZTmhdaZG2Notq3CnA_4"
 
 settings = Settings()

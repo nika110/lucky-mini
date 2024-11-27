@@ -7,7 +7,7 @@ from database import Database
 from .raffle_models import Raffle, Ticket
 from .raffle_repo import RaffleRepository
 from .ticket_repo import TicketRepository
-from .websocket_server import WebSocketManager
+from .websocket_server import WebSocketManager, BufferedWebSocketManager
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ class RaffleService:
         self.raffle_repo = RaffleRepository()
         self.ticket_repo = TicketRepository()
         self.websocket_manager = WebSocketManager()
+        self.buffered_websocket_manager = BufferedWebSocketManager()
 
     async def get_current_raffle(self) -> Raffle:
         current_raffle = await self.raffle_repo.get_current_raffle()
@@ -52,12 +53,12 @@ class RaffleService:
 
     async def purchase_real_tickets(self, ticket_count: int) -> Tuple[List[str], str]:
         pass
-        
-
 
     async def purchase_tickets(self, user_id: str, ticket_count: int) -> Tuple[List[str], str]:
         current_raffle = await self.get_current_raffle()
         ticket_numbers = []
+
+        logger.info(f"Purchasing {ticket_count} tickets for user {user_id}")
 
         for _ in range(ticket_count):
             ticket_number = str(uuid.uuid4())
@@ -68,17 +69,10 @@ class RaffleService:
                 purchase_time=datetime.utcnow()
             )
             await self.ticket_repo.create_ticket(ticket)
-
             ticket_numbers.append(ticket_number)
 
-
-        new_pool = await Database.redis.hincrby(f"raffle:{current_raffle.id}", "total_pool", ticket_count)
-
-        await self.websocket_manager.broadcast_update({
-            "type": "pool_update",
-            "raffle_id": current_raffle.id,
-            "total_pool": new_pool
-        })
+        logger.info(f"Adding {ticket_count} tickets to buffer for raffle {current_raffle.id}")
+        await self.buffered_websocket_manager.add_to_buffer(current_raffle.id, ticket_count)
 
         return ticket_numbers, current_raffle.id
 

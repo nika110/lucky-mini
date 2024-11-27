@@ -23,40 +23,53 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
         context: grpc.aio.ServicerContext,
     ) -> raffle_pb2.PurchaseTicketsResponse:
         try:
+            # Validate user and balance
             user = await self.balance_service.get_user_balance(request.user_id)
             if not user:
-                await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details("User not found")
                 return raffle_pb2.PurchaseTicketsResponse()
 
             if user.balance < request.ticket_count:
-                await context.abort(
-                    grpc.StatusCode.FAILED_PRECONDITION,
+                context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+                context.set_details(
                     f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
                 )
                 return raffle_pb2.PurchaseTicketsResponse()
 
+            # Purchase tickets
             ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
                 request.user_id,
                 request.ticket_count
             )
 
-            decrease_balance = await self.balance_service.update_user_balance(request.user_id, -request.ticket_count)
+            # Update balance
+            await self.balance_service.update_user_balance(
+                request.user_id, 
+                -request.ticket_count
+            )
 
+            # Handle referral
             check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
-            if check_if_user_has_referrer.referred_by != "":
-                referrer = await self.user_service.get_user_by_telegram_id(check_if_user_has_referrer.referred_by)
+            if check_if_user_has_referrer.referred_by:
+                referrer = await self.user_service.get_user_by_telegram_id(
+                    check_if_user_has_referrer.referred_by
+                )
                 await self.user_service.update_user_xp(
                     referrer.id,
                     (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
                 )
 
+            # Return successful response
             return raffle_pb2.PurchaseTicketsResponse(
                 ticket_numbers=ticket_numbers,
                 raffle_id=raffle_id
             )
 
         except Exception as e:
-            context.abort(grpc.StatusCode.FAILED_PRECONDITION, str(e))
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return raffle_pb2.PurchaseTicketsResponse()
 
     async def GetCurrentRaffle(self, request, context):
         try:

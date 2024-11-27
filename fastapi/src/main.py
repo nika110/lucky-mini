@@ -53,8 +53,7 @@ async def serve():
 
     # Start WebSocket server
     async with websockets.serve(websocket_handler, ws_host, ws_port):
-        logger.info(f"WebSocket server started on ws://{ws_host}:{ws_port}/ws")
-        logger.info(f"gRPC server started on {grpc_addr}")
+        logger.info(f"WebSocket server started on ws://{ws_host}:{ws_port}")
         try:
             await asyncio.gather(
                 server.wait_for_termination(),
@@ -66,7 +65,6 @@ async def serve():
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
             raise
-
 
 if __name__ == "__main__":
     asyncio.run(serve())
