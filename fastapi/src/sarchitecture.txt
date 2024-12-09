@@ -1,0 +1,20 @@
+
+
+
+
+User -> AuthenticateTelegram[Frontend] -> Pass authData to backend
+
+-> Backend Pass to FASTAPI GRPC VALIDATE, if valid, return user profile (WITH USER REFERRALS)
+
+
+User.UpdateUserReferrals -> Frontend -> Backend -> FASTAPI GRPC UpdateUserReferral
+
+-> Show New Refferal List in GRPC RESP.
+
+
+RPC -> create new grpc where it shows updated Refferral list.:
+
+
+SEND_MONEY_TO_WINNER TODO
+
+USE BLOCKCHAIN TO RANDOMISE WINNERS TODO

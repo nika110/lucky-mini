@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0craffle.proto\x12\x06raffle\"9\n\x16IncreaseBalanceRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x05\"*\n\x17IncreaseBalanceResponse\x12\x0f\n\x07\x62\x61lance\x18\x01 \x01(\x05\"?\n\x16PurchaseTicketsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x14\n\x0cticket_count\x18\x02 \x01(\x05\"D\n\x17PurchaseTicketsResponse\x12\x16\n\x0eticket_numbers\x18\x01 \x03(\t\x12\x11\n\traffle_id\x18\x02 \x01(\t\"\x19\n\x17GetCurrentRaffleRequest\"U\n\x18GetCurrentRaffleResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x02 \x01(\x03\x12\x14\n\x0c\x63urrent_pool\x18\x03 \x01(\x01\"\x19\n\x17GetRaffleResultsRequest\";\n\x06Winner\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x01\x12\x10\n\x08position\x18\x03 \x01(\x05\"\x88\x01\n\x18GetRaffleResultsResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\x03\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\x03\x12\x12\n\ntotal_pool\x18\x04 \x01(\x01\x12\x1f\n\x07winners\x18\x05 \x03(\x0b\x32\x0e.raffle.Winner2\xe5\x02\n\rRaffleService\x12R\n\x0fPurchaseTickets\x12\x1e.raffle.PurchaseTicketsRequest\x1a\x1f.raffle.PurchaseTicketsResponse\x12U\n\x10GetCurrentRaffle\x12\x1f.raffle.GetCurrentRaffleRequest\x1a .raffle.GetCurrentRaffleResponse\x12R\n\x0fIncreaseBalance\x12\x1e.raffle.IncreaseBalanceRequest\x1a\x1f.raffle.IncreaseBalanceResponse\x12U\n\x10GetRaffleResults\x12\x1f.raffle.GetRaffleResultsRequest\x1a .raffle.GetRaffleResultsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0craffle.proto\x12\x06raffle\"9\n\x16IncreaseBalanceRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x05\"*\n\x17IncreaseBalanceResponse\x12\x0f\n\x07\x62\x61lance\x18\x01 \x01(\x05\"?\n\x16PurchaseTicketsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x14\n\x0cticket_count\x18\x02 \x01(\x05\"D\n\x17PurchaseTicketsResponse\x12\x16\n\x0eticket_numbers\x18\x01 \x03(\t\x12\x11\n\traffle_id\x18\x02 \x01(\t\"2\n\x17GetCurrentRaffleRequest\x12\x17\n\x0fuser_auth_token\x18\x01 \x01(\t\"l\n\x18GetCurrentRaffleResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x02 \x01(\x03\x12\x14\n\x0c\x63urrent_pool\x18\x03 \x01(\x01\x12\x15\n\rparticipating\x18\x04 \x01(\x08\"\x19\n\x17GetRaffleResultsRequest\";\n\x06Winner\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x01\x12\x10\n\x08position\x18\x03 \x01(\x05\"\x88\x01\n\x18GetRaffleResultsResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\x03\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\x03\x12\x12\n\ntotal_pool\x18\x04 \x01(\x01\x12\x1f\n\x07winners\x18\x05 \x03(\x0b\x32\x0e.raffle.Winner2\xe5\x02\n\rRaffleService\x12R\n\x0fPurchaseTickets\x12\x1e.raffle.PurchaseTicketsRequest\x1a\x1f.raffle.PurchaseTicketsResponse\x12U\n\x10GetCurrentRaffle\x12\x1f.raffle.GetCurrentRaffleRequest\x1a .raffle.GetCurrentRaffleResponse\x12R\n\x0fIncreaseBalance\x12\x1e.raffle.IncreaseBalanceRequest\x1a\x1f.raffle.IncreaseBalanceResponse\x12U\n\x10GetRaffleResults\x12\x1f.raffle.GetRaffleResultsRequest\x1a .raffle.GetRaffleResultsResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,15 +40,15 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PURCHASETICKETSRESPONSE']._serialized_start=192
   _globals['_PURCHASETICKETSRESPONSE']._serialized_end=260
   _globals['_GETCURRENTRAFFLEREQUEST']._serialized_start=262
-  _globals['_GETCURRENTRAFFLEREQUEST']._serialized_end=287
-  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_start=289
-  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_end=374
-  _globals['_GETRAFFLERESULTSREQUEST']._serialized_start=376
-  _globals['_GETRAFFLERESULTSREQUEST']._serialized_end=401
-  _globals['_WINNER']._serialized_start=403
-  _globals['_WINNER']._serialized_end=462
-  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_start=465
-  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_end=601
-  _globals['_RAFFLESERVICE']._serialized_start=604
-  _globals['_RAFFLESERVICE']._serialized_end=961
+  _globals['_GETCURRENTRAFFLEREQUEST']._serialized_end=312
+  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_start=314
+  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_end=422
+  _globals['_GETRAFFLERESULTSREQUEST']._serialized_start=424
+  _globals['_GETRAFFLERESULTSREQUEST']._serialized_end=449
+  _globals['_WINNER']._serialized_start=451
+  _globals['_WINNER']._serialized_end=510
+  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_start=513
+  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_end=649
+  _globals['_RAFFLESERVICE']._serialized_start=652
+  _globals['_RAFFLESERVICE']._serialized_end=1009
 # @@protoc_insertion_point(module_scope)

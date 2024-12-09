@@ -1,8 +1,9 @@
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorCollection
 from .user_models import User
-
+import jwt
 from database import Database
+from config import settings
 
 class UserRepository:
     @property
@@ -41,3 +42,17 @@ class UserRepository:
         )
         return result.modified_count > 0
 
+    async def get_user_referral_list(self, user_id: str) -> list[str]:
+        user = await self.get_user_by_id(user_id)
+        if user and user.referrals:
+            return [str(referral) for referral in user.referrals]
+        return []
+
+
+    async def get_user_from_token(self, token: str):
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM]
+        )
+        return payload

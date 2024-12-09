@@ -17,6 +17,28 @@ service AuthService {
 
     rpc UpdateUserReferral(UpdateUserReferralRequest) returns (UpdateUserReferralResponse);
 
+    rpc ListUserReferrals(ListUserReferralsRequest) returns (ListUserReferralsResponse);
+
+    rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+
+
+}
+
+
+message GetConfigRequest {
+}
+
+message GetConfigResponse{
+    string ticket_price = 1;
+}
+
+
+message ListUserReferralsRequest{
+    string user_id = 1;
+}
+
+message ListUserReferralsResponse{
+    repeated string telegram_ids = 1;
 }
 
 message UpdateUserReferralRequest {

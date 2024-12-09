@@ -24,18 +24,18 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
     ) -> raffle_pb2.PurchaseTicketsResponse:
         try:
             # Validate user and balance
-            user = await self.balance_service.get_user_balance(request.user_id)
-            if not user:
-                context.set_code(grpc.StatusCode.NOT_FOUND)
-                context.set_details("User not found")
-                return raffle_pb2.PurchaseTicketsResponse()
+            # user = await self.balance_service.get_user_balance(request.user_id)
+            # if not user:
+            #     context.set_code(grpc.StatusCode.NOT_FOUND)
+            #     context.set_details("User not found")
+            #     return raffle_pb2.PurchaseTicketsResponse()
 
-            if user.balance < request.ticket_count:
-                context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
-                context.set_details(
-                    f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
-                )
-                return raffle_pb2.PurchaseTicketsResponse()
+            # if user.balance < request.ticket_count:
+            #     context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            #     context.set_details(
+            #         f"Insufficient balance. Required: {request.ticket_count}, Available: {user.balance}"
+            #     )
+            #     return raffle_pb2.PurchaseTicketsResponse()
 
             # Purchase tickets
             ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
@@ -44,10 +44,10 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             )
 
             # Update balance
-            await self.balance_service.update_user_balance(
-                request.user_id, 
-                -request.ticket_count
-            )
+            # await self.balance_service.update_user_balance(
+            #     request.user_id,
+            #     -request.ticket_count
+            # )
 
             # Handle referral
             check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
@@ -57,6 +57,11 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
                 )
                 await self.user_service.update_user_xp(
                     referrer.id,
+                    (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                )
+
+                await self.user_service.update_user_xp(
+                    request.user_id,
                     (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
                 )
 
@@ -73,20 +78,34 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
 
     async def GetCurrentRaffle(self, request, context):
         try:
+            # First get the current raffle
             current_raffle = await self.raffle_service.get_current_raffle()
             if not current_raffle:
-                context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
+                await context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
 
+            # Then get the user
+            user = await self.user_service.get_user_from_token(request.user_auth_token)
+            if not user:
+                await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
+
+            # Get user tickets and check participation
+            get_user_ticket = await self.raffle_service.ticket_repo.get_user_tickets(user['user_id'])
+            participating = any(ticket.raffle_id == current_raffle.id for ticket in get_user_ticket)
+
+            # Get total pool
             total_pool = float(await self.raffle_service.get_total_pool(current_raffle.id) or 0)
 
-            return raffle_pb2.GetCurrentRaffleResponse(
+            # Create and return response
+            response = raffle_pb2.GetCurrentRaffleResponse(
                 raffle_id=current_raffle.id,
                 end_time=int(current_raffle.end_time.timestamp()),
-                current_pool=total_pool
+                current_pool=total_pool,
+                participating=participating
             )
-        except Exception as e:
-            context.abort(grpc.StatusCode.INTERNAL, str(e))
+            return response
 
+        except Exception as e:
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
     def _convert_to_proto_winner(self, winner) -> raffle_pb2.Winner:
         try:
             # Create a new Winner proto message

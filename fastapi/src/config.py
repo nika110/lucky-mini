@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://mongodb:27017"
     REDIS_URL: str = "redis://redis"
-    RAFFLE_DURATION_MINUTES: int = 5
+    RAFFLE_DURATION_MINUTES: int = 2
     MAIN_WINNER_PERCENTAGE: float = 0.70
     DEV_TEAM_PERCENTAGE: float = 0.05
     LUCKY_LIQ_POOL_PERCENTAGE: float = 0.05
@@ -19,5 +19,7 @@ class Settings(BaseSettings):
     REFERRAL_UPDATE_PER_TICKET_BUY: float = 0.1
 
     TELEGRAM_BOT_TOKEN:str = "5938982333:AAH8vafdqHtFCIctZTmhdaZG2Notq3CnA_4"
+
+    TICKET_PRICE: float = 0.15
 
 settings = Settings()

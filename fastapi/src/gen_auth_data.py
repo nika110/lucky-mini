@@ -9,7 +9,6 @@ def generate_valid_auth_data(bot_token: str, telegram_id: str):
     user_data = {
         "id": int(telegram_id),
         "first_name": "John",
-        "last_name": "Doe",
         "username": "johndoe",
         "language_code": "en"
     }
@@ -25,6 +24,7 @@ def generate_valid_auth_data(bot_token: str, telegram_id: str):
 
     # Sort the data
     sorted_data = dict(sorted(init_data.items()))
+    print(sorted_data)
 
     # Create data check string
     data_check_string = '\n'.join(f"{k}={v}" for k, v in sorted_data.items())
@@ -55,8 +55,8 @@ def generate_valid_auth_data(bot_token: str, telegram_id: str):
     }
 
 # Generate test data
-BOT_TOKEN = "YOUR_BOT_TOKEN"  # Use your actual bot token
-telegram_id = "123456789"
+BOT_TOKEN = "5938982333:AAH8vafdqHtFCIctZTmhdaZG2Notq3CnA_4"  # Use your actual bot token
+telegram_id = "1027739327"
 
 test_data = generate_valid_auth_data(BOT_TOKEN, telegram_id)
 print(json.dumps(test_data, indent=2))

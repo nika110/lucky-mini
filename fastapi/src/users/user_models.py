@@ -10,6 +10,8 @@ class User(BaseModel):
     created_at: datetime
     xp: int
     referred_by: Optional[str]
+    referrals: Optional[list[str]]
+
 
     class Config:
         from_attributes = True

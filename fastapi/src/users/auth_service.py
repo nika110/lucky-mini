@@ -22,6 +22,10 @@ class AuthService:
         self.user_repo = UserRepository()
         self.ticket_repo = TicketRepository()
 
+        self.settings=settings
+
+
+
         self.secret_key = hmac.new(
                 "WebAppData".encode(),
                 settings.TELEGRAM_BOT_TOKEN.encode(),
@@ -104,7 +108,8 @@ class AuthService:
                 balance=0.0,
                 created_at=datetime.utcnow(),
                 xp=0,
-                referred_by=referred_by
+                referred_by=referred_by,
+                referrals=[] #STORE TG_ID
             )
             await self.user_repo.create_user(user)
 
@@ -123,13 +128,6 @@ class AuthService:
             settings.JWT_SECRET_KEY,
             algorithm=settings.JWT_ALGORITHM
         )
-    def get_user_from_token(self, token: str):
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM]
-        )
-        return payload
 
 
     async def update_ton_wallet(
@@ -152,7 +150,7 @@ class AuthService:
     
     async def validate_token(self, token: str):
         try:
-            get_user = self.get_user_from_token(token)
+            get_user = await self.user_repo.get_user_from_token(token)
             user = await self.user_repo.get_user_by_id(get_user["user_id"])
             if not user:
                 return None, []
@@ -179,9 +177,13 @@ class AuthService:
         user_referred_by = await self.user_repo.get_user_by_telegram_id(referred_by)
         if not user_referred_by:
             raise ValueError("Referral user not found")
-
+        user_referrals = []
         user.referred_by = referred_by
+        user.referrals = user_referrals.append(referred_by)
         await self.user_repo.update_user(user)
         return user
+
+    async def get_user_referral_list(self, user_id: str) -> list:
+        return await self.user_repo.get_user_referral_list(user_id)
 
 

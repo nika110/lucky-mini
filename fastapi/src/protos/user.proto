@@ -10,6 +10,8 @@ message UserProfile {
     int64 created_at = 5;
     int32 xp = 6 ;
     optional string referred_by = 7;
+    repeated string referrals = 8;
+
 }
 
 message Ticket {

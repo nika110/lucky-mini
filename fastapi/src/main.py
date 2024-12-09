@@ -17,6 +17,8 @@ from raffle.raffle_service import RaffleService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+
 async def init_db():
     await Database.connect_db()
     db = Database.get_db()

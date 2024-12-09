@@ -30,6 +30,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             profile.balance = float(user.balance) if user.balance is not None else 0.0
             profile.xp = int(user.xp) if user.xp is not None else 0
             profile.referred_by = str(user.referred_by) if user.referred_by else ""
+            #profile.referrals = [] #TODO PASS REFDERRAL USER TG_ID OR UID
 
             logger.info(f"Created profile fields:")
             logger.info(f"  id: {profile.id}")
@@ -39,6 +40,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             logger.info(f"  created_at: {profile.created_at}")
             logger.info(f"  xp: {profile.xp}")
             logger.info(f"  referred_by: {profile.referred_by}")
+            logger.info(f"  referred_by: {profile.referrals}")
 
             return profile
 
@@ -157,3 +159,25 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             context.abort(grpc.StatusCode.NOT_FOUND, str(e))
         except Exception as e:
             context.abort(grpc.StatusCode.INTERNAL, str(e))
+
+    async def ListUserReferrals(self, request, context):
+        try:
+            referrals = await self.auth_service.get_user_referral_list(request.user_id)
+            response = auth_pb2.ListUserReferralsResponse()
+
+            telegram_ids = [str(telegram_id) for telegram_id in referrals if telegram_id is not None]
+            response.telegram_ids.extend(telegram_ids)
+
+            return response
+        except ValueError as e:
+            context.abort(grpc.StatusCode.NOT_FOUND, str(e))
+        except Exception as e:
+            context.abort(grpc.StatusCode.INTERNAL, str(e))
+
+    async def GetConfig(self, request, context):
+        try:
+            ticket_price = str(self.auth_service.settings.TICKET_PRICE)
+            response = auth_pb2.GetConfigResponse(ticket_price=ticket_price)
+            return response
+        except Exception as e:
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
