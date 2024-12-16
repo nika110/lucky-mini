@@ -5,6 +5,8 @@ import { SolanaWalletProvider } from "./components/features/providers/SolWallet.
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { store } from "./redux/store";
 import { Provider } from "react-redux";
+import eruda from "eruda";
+eruda.init();
 
 const App = () => {
   return (

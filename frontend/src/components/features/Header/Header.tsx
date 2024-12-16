@@ -62,7 +62,6 @@ interface HeaderProfileProps {
 
 const HeaderProfile: FC<HeaderProfileProps> = ({ user }) => {
   const tgUser = WebApp.initDataUnsafe.user;
-  console.log(WebApp.initData);
   // const { telegramId } = user;
   // const { data: wallet, isSuccess } = useGetWalletQuery({
   //   telegramId,
@@ -74,8 +73,10 @@ const HeaderProfile: FC<HeaderProfileProps> = ({ user }) => {
   //   await tonConnectUI.disconnect();
   // };
 
+  const isWalletExist = user && user.ton_public_key !== "" && tonWallet;
+
   if (
-    tonWallet
+    isWalletExist
     //  || (isSuccess && wallet && wallet.data && wallet.data.walletData)
   ) {
     return (

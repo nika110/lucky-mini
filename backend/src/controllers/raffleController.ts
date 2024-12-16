@@ -1,126 +1,170 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../types/api";
 import { GrpcManager } from "../grpc/grpc-manager";
+import { IUserGet } from "../types/interfaces";
+import { User as UserSchema } from "../models/shemas";
+import { TonTransactionService } from "../services/tonTransactions";
+import { TonTransactionWalletService } from "../services/tonWallet";
 
-interface PurchaseTicketsBody {
-  userId: string;
-  ticketCount: number;
-}
-
-interface GetRaffleResultsParams {
-  raffleId: string;
+interface PayoutRequest {
+  password: string;
+  payouts: Array<{
+    user_id: string;
+    amount: string;
+  }>;
 }
 
 export class RaffleController {
-  private static grpcClient = GrpcManager.getInstance().getRaffleClient();
+  private static instance: RaffleController | null = null;
+  private grpcManager: GrpcManager;
 
-  public static async purchaseTickets(
-    req: Request<{}, {}, PurchaseTicketsBody>,
+  private constructor(grpcManager: GrpcManager) {
+    this.grpcManager = grpcManager;
+  }
+
+  public static async getInstance(): Promise<RaffleController> {
+    if (!RaffleController.instance) {
+      const grpcManager = await GrpcManager.getInstance();
+      RaffleController.instance = new RaffleController(grpcManager);
+    }
+    return RaffleController.instance;
+  }
+
+  public async processPayout(
+    req: Request<{}, {}, PayoutRequest>,
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
-      const { userId, ticketCount } = req.body;
+      const { password, payouts } = req.body;
 
-      if (!userId || !ticketCount) {
-        return res.status(400).json({
+      // Validate password
+      if (password !== process.env.PAYOUT_PASSWORD) {
+        return res.status(403).json({
           success: false,
-          message: "User ID and ticket count are required",
+          message: "Invalid password",
           data: null,
         });
       }
 
-      if (ticketCount <= 0) {
+      // Validate payouts array
+      if (!Array.isArray(payouts) || payouts.length === 0) {
         return res.status(400).json({
           success: false,
-          message: "Ticket count must be greater than 0",
+          message: "Invalid payouts data",
           data: null,
         });
       }
 
-      const result = await this.grpcClient.purchaseTickets(userId, ticketCount);
+      // Process each payout
+      const tonWalletService = TonTransactionWalletService.getInstance();
+      const results = [];
+      const errors = [];
 
-      console.log(
-        `Tickets purchased for user ${userId}:`,
-        result.ticketNumbers
-      );
+      for (const payout of payouts) {
+        try {
+          // Find user's wallet address
+          const user = await UserSchema.findById(payout.user_id)
+            .select("wallet_address")
+            .lean();
 
+          if (!user || !user.ton_public_key) {
+            errors.push({
+              user_id: payout.user_id,
+              error: "User not found or no wallet address",
+            });
+            continue;
+          }
+
+          // Process TON transaction
+          const txResult = await tonWalletService.payoutTon(
+            user.ton_public_key,
+            payout.amount
+          );
+
+          if (txResult.success) {
+            results.push({
+              user_id: payout.user_id,
+              amount: payout.amount,
+              tx_hash: txResult.txHash,
+            });
+          } else {
+            errors.push({
+              user_id: payout.user_id,
+              error: txResult.error,
+            });
+          }
+        } catch (error: any) {
+          errors.push({
+            user_id: payout.user_id,
+            error: error.message,
+          });
+        }
+      }
+
+      // Return response with results and errors
       return res.status(200).json({
         success: true,
-        message: "Tickets purchased successfully",
-        data: {
-          ticketNumbers: result.ticketNumbers,
-          raffleId: result.raffleId,
-        },
+        message: "Payout process completed",
+        data: true,
       });
     } catch (error: any) {
-      console.error("Error in purchaseTickets:", {
-        userId: req.body.userId,
-        ticketCount: req.body.ticketCount,
+      console.error("Error in processPayout:", {
         errorMessage: error.message,
         stack: error.stack,
       });
 
-      if (error.code) {
-        switch (error.code) {
-          case 3: // INVALID_ARGUMENT
-            return res.status(400).json({
-              success: false,
-              message: "Invalid request parameters",
-              data: null,
-            });
-          case 5: // NOT_FOUND
-            return res.status(404).json({
-              success: false,
-              message: "Raffle not found",
-              data: null,
-            });
-          case 7: // PERMISSION_DENIED
-            return res.status(403).json({
-              success: false,
-              message: "Permission denied",
-              data: null,
-            });
-          default:
-            return res.status(500).json({
-              success: false,
-              message: "Error while purchasing tickets",
-              data: null,
-            });
-        }
-      }
-
       return res.status(500).json({
         success: false,
-        message: "Internal server error while purchasing tickets",
+        message: "Internal server error while processing payouts",
         data: null,
       });
     }
   }
 
-  public static async getCurrentRaffle(
-    req: Request,
+  public async getCurrentRaffle(
+    req: Request<{}, {}, { userId: string }>,
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
-      const currentRaffle = await this.grpcClient.getCurrentRaffle();
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID is required",
+          data: null,
+        });
+      }
+
+      const grpcClient = this.grpcManager.getRaffleClient();
+      const currentRaffle = await grpcClient.getCurrentRaffle(userId);
 
       return res.status(200).json({
         success: true,
         message: "Current raffle retrieved successfully",
         data: {
-          raffleId: currentRaffle.raffleId,
-          endTime: currentRaffle.endTime,
-          currentPool: currentRaffle.currentPool,
+          raffleId: currentRaffle.raffle_id,
+          endTime: currentRaffle.end_time,
+          currentPool: currentRaffle.current_pool,
+          participating: currentRaffle.participating,
         },
       });
     } catch (error: any) {
       console.error("Error in getCurrentRaffle:", {
         errorMessage: error.message,
         stack: error.stack,
+        code: error.code,
       });
 
+      if (error.message === "gRPC client not ready") {
+        return res.status(503).json({
+          success: false,
+          message: "Service temporarily unavailable",
+          data: null,
+        });
+      }
+
       if (error.code === 5) {
-        // NOT_FOUND
         return res.status(404).json({
           success: false,
           message: "No active raffle found",
@@ -136,72 +180,159 @@ export class RaffleController {
     }
   }
 
-  public static async getRaffleResults(
-    req: Request<GetRaffleResultsParams>,
+  public async purchaseTicket(
+    req: Request<IUserGet>,
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
-      const { raffleId } = req.params;
+      const { telegramId } = req.params;
+      const { boc, amount, userAddress } = req.body;
 
-      if (!raffleId) {
-        return res.status(400).json({
+      const user = await UserSchema.findOne({ telegram_id: telegramId })
+        .select("-__v") // stuff users
+        .lean(); // return object instead of Mongoose doc
+
+      if (!user) {
+        return res.status(404).json({
           success: false,
-          message: "Raffle ID is required",
+          message: "User not found",
           data: null,
         });
       }
 
-      const results = await this.grpcClient.getRaffleResults(raffleId);
-
-      const formattedWinners = results.winners.map((winner) => ({
-        userId: winner.userId,
-        amount: winner.amount,
-        position: winner.position,
-      }));
-
-      return res.status(200).json({
-        success: true,
-        message: "Raffle results retrieved successfully",
-        data: {
-          winners: formattedWinners,
-          totalPool: results.totalPool,
-        },
-      });
-    } catch (error: any) {
-      console.error("Error in getRaffleResults:", {
-        raffleId: req.params.raffleId,
-        errorMessage: error.message,
-        stack: error.stack,
-      });
-
-      if (error.code) {
-        switch (error.code) {
-          case 5: // NOT_FOUND
-            return res.status(404).json({
-              success: false,
-              message: "Raffle not found",
-              data: null,
-            });
-          case 9: // FAILED_PRECONDITION
-            return res.status(400).json({
-              success: false,
-              message: "Raffle has not ended yet",
-              data: null,
-            });
-          default:
-            return res.status(500).json({
-              success: false,
-              message: "Error while fetching raffle results",
-              data: null,
-            });
-        }
+      if (!userAddress) {
+        return res.status(404).json({
+          success: false,
+          message: "User does not have a public key",
+          data: null,
+        });
       }
 
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error while fetching raffle results",
-        data: null,
+      // Validate request body
+      if (!boc || typeof boc !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid BOC format",
+          data: null,
+        });
+      }
+
+      // Get gRPC client
+      const grpcClient = this.grpcManager.getRaffleClient();
+
+      if (!grpcClient.isReady()) {
+        return res.status(503).json({
+          success: false,
+          message: "Service temporarily unavailable",
+          data: null,
+        });
+      }
+
+      const tonService = TonTransactionService.getInstance();
+
+      // TON Transaction validation
+      try {
+        const validatedTransaction = await tonService.validateBoc(
+          boc,
+          userAddress
+        );
+
+        if (!validatedTransaction.isValid) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid transaction",
+            data: null,
+          });
+        }
+
+        // TEST 1$ -> 0.15 TON = 1 ticket
+
+        const calculatedAmount = Math.floor(
+          (+validatedTransaction.amount / +process.env.TICKET_PRICE!) as number
+        );
+
+        // Call gRPC purchaseTicket method
+        const responseTickets = await grpcClient.purchaseTickets(
+          user.id,
+          calculatedAmount
+        );
+
+        console.log(responseTickets);
+
+        if (!responseTickets) {
+          return res.status(400).json({
+            success: false,
+            message: "Failed to purchase tickets",
+            data: null,
+          });
+        }
+
+        // response 200
+        return res.status(200).json({
+          success: true,
+          message: "Tickets purchased successfully",
+          data: {
+            amount: responseTickets.ticket_numbers.length,
+            raffleId: responseTickets.raffle_id,
+          },
+        });
+      } catch (tonError: any) {
+        // if (tonError instanceof TonTransactionError) {
+        //   return res.status(400).json({
+        //     success: false,
+        //     message: tonError.message,
+        //     data: {
+        //       code: tonError.code,
+        //       details: tonError.details,
+        //     },
+        //   });
+        // }
+        throw tonError;
+      }
+    } catch (error: any) {
+      console.error("Error in purchaseTicket:", {
+        errorMessage: error.message,
+        stack: error.stack,
+        code: error.code,
       });
+
+      // Handle specific error cases
+      switch (error.code) {
+        case 3: // INVALID_ARGUMENT
+          return res.status(400).json({
+            success: false,
+            message: "Invalid transaction data",
+            data: null,
+          });
+
+        case 7: // PERMISSION_DENIED
+          return res.status(403).json({
+            success: false,
+            message: "Insufficient funds or unauthorized",
+            data: null,
+          });
+
+        case 5: // NOT_FOUND
+          return res.status(404).json({
+            success: false,
+            message: "Active raffle not found",
+            data: null,
+          });
+
+        case 14: // UNAVAILABLE
+          return res.status(503).json({
+            success: false,
+            message: "Service temporarily unavailable",
+            data: null,
+          });
+
+        default:
+          return res.status(500).json({
+            success: false,
+            message: "Failed to process ticket purchase",
+            data: null,
+          });
+      }
     }
   }
 }

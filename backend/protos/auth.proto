@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package auth;
+
+import "user.proto";
+
+
+service AuthService {
+    // Authenticate or create user with Telegram ID
+    rpc AuthenticateTelegram(AuthTelegramRequest) returns (AuthTelegramResponse);
+
+    // Update TON wallet
+    rpc UpdateTonWallet(UpdateTonWalletRequest) returns (UpdateTonWalletResponse);
+
+    // Validate token
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+    rpc UpdateUserReferral(UpdateUserReferralRequest) returns (UpdateUserReferralResponse);
+
+    rpc ListUserReferrals(ListUserReferralsRequest) returns (ListUserReferralsResponse);
+
+    rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
+
+
+}
+
+
+message GetConfigRequest {
+}
+
+message GetConfigResponse{
+    string ticket_price = 1;
+}
+
+
+message ListUserReferralsRequest{
+    string user_id = 1;
+}
+
+message ListUserReferralsResponse{
+    repeated string telegram_ids = 1;
+}
+
+message UpdateUserReferralRequest {
+    string user_id= 1;
+    string referred_by = 2;
+}
+
+message UpdateUserReferralResponse {
+    user.UserProfile user = 1;
+}
+
+message AuthTelegramRequest {
+    string telegram_id = 1;
+    optional string referred_by = 2;
+    string telegram_auth_code = 3;
+}
+
+message AuthTelegramResponse {
+    string token = 1;
+    user.UserProfile user = 2;
+}
+
+message UpdateTonWalletRequest {
+    string telegram_id = 1;
+    string ton_public_key = 2;
+}
+
+message UpdateTonWalletResponse {
+    user.UserProfile user = 1;
+}
+
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool is_valid = 1;
+    user.UserProfile user = 2;
+    repeated user.Ticket tickets = 3;
+}

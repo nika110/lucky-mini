@@ -10,14 +10,31 @@ export const validateInitUser = (
   res: Response,
   next: NextFunction
 ) => {
-  const { telegramId } = req.body;
-
-  if (!telegramId || typeof telegramId !== "string") {
-    return res.status(400).json({
+  // Check Authorization header
+  const authHeader = req.headers.authorization || req.header("Authorization");
+  if (!authHeader) {
+    return res.status(401).json({
       success: false,
-      error: "Valid telegramId is required",
+      error: "UNAUTHORIZED",
+      message: "Authorization header is missing",
     });
   }
+
+  // Validate token format
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : authHeader;
+
+  if (!token || token.trim() === "") {
+    return res.status(401).json({
+      success: false,
+      error: "UNAUTHORIZED",
+      message: "Invalid authorization token",
+    });
+  }
+
+  // Add token to request
+  (req as Request & { token: string }).token = token;
 
   next();
 };

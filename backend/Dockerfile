@@ -16,7 +16,6 @@ COPY backend/tsconfig.json ./
 
 # Copy source code (updated paths)
 COPY backend/ .
-COPY protos/ ./protos/
 
 # Expose ports
 EXPOSE 5000

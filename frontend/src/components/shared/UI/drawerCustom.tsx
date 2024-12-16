@@ -382,6 +382,15 @@ const DrawerHeader = React.forwardRef<
   />
 ));
 
+const DrawerTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <h2 className={cn("text-center text-base leading-5 uppercase mx-auto mb-4 max-w-[260px]", className)} ref={ref} {...props} />
+));
+
+DrawerTitle.displayName = "DrawerTitle";
+
 const DrawerFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -400,4 +409,4 @@ DrawerContentBorders.displayName = "DrawerContentBorders";
 
 export const Drawer = DrawerRoot;
 
-export { DrawerTrigger, DrawerContent, DrawerHeader, DrawerFooter };
+export { DrawerTrigger, DrawerContent, DrawerTitle, DrawerHeader, DrawerFooter };

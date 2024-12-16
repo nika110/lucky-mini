@@ -73,7 +73,7 @@ const Referrals: FC = () => {
               </li>
             </ul>
             {user ? (
-              <ReferralsInvite referralCode={user.referralCode} />
+              <ReferralsInvite referralCode={user.telegram_id} />
             ) : (
               <div className="flex justify-center mt-5">
                 <Button className="max-w-[205px] w-full">INVITE FREN</Button>

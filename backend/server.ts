@@ -1,3 +1,4 @@
+import { User, Raffle, Ticket } from "./src/models/shemas";
 import mongoose from "mongoose";
 import redisService from "./src/config/redis";
 import app from "./app";
@@ -9,49 +10,105 @@ interface ServerConfig {
 }
 
 class Server {
-  private static instance: Server;
+  private static instance: Server | null = null;
+  private static initializationPromise: Promise<Server> | null = null;
   private config: ServerConfig;
   private isShuttingDown: boolean = false;
   private server: any;
   private grpcManager: GrpcManager;
 
-  private constructor() {
+  private constructor(grpcManager: GrpcManager) {
     this.config = {
       port: parseInt(process.env.PORT || "5000", 10),
-      mongoUri:
-        process.env.MONGODB_URI || "mongodb://localhost:27017/raffle_app",
+      mongoUri: process.env.MONGODB_URI || "mongodb://mongodb:27017/raffle_db",
     };
-    this.grpcManager = GrpcManager.getInstance();
+    this.grpcManager = grpcManager;
   }
 
-  public static getInstance(): Server {
+  public static async getInstance(): Promise<Server> {
     if (!Server.instance) {
-      Server.instance = new Server();
+      const grpcManager = await GrpcManager.getInstance();
+      Server.instance = new Server(grpcManager);
     }
     return Server.instance;
   }
 
   private async connectMongo(): Promise<void> {
+    console.log("MongoDB connecting...");
+
     try {
-      await mongoose.connect(this.config.mongoUri, {});
-
-      mongoose.connection.on("connected", () => {
-        console.log("📦 MongoDB connected successfully");
+      const conn = await mongoose.connect("mongodb://mongodb:27017/raffle_db", {
+        maxPoolSize: 100,
+        minPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
       });
+      const collection = conn.connection.collection("users");
 
-      mongoose.connection.on("error", (err) => {
-        console.error("❌ MongoDB connection error:", err);
-        process.exit(1);
-      });
+      // Register models with explicit collection names
+      conn.model("User", User.schema, "users");
+      conn.model("Raffle", Raffle.schema, "raffles");
+      conn.model("Ticket", Ticket.schema, "tickets");
 
-      mongoose.connection.on("disconnected", () => {
-        if (!this.isShuttingDown) {
-          console.log("🔄 MongoDB disconnected. Attempting to reconnect...");
-        }
-      });
+      try {
+        const user = await collection.findOne({
+          telegram_id: "1027739327",
+        });
+        console.log("USEqwewqewqeR:", user);
+        console.log("USERweeer ID:", user?.telegram_id);
+        console.log("USERS:", collection.find({}));
+      } catch (error) {
+        console.log("errrrrror user");
+      }
+
+      // Verify collections
+      const collections = await mongoose.connection
+        .db!.listCollections()
+        .toArray();
+      const collectionNames = collections.map((col) => col.name);
+
+      const requiredCollections = [
+        "users",
+        "raffles",
+        "tickets"
+      ];
+      const missingCollections = requiredCollections.filter(
+        (name) => !collectionNames.includes(name)
+      );
+
+      if (missingCollections.length > 0) {
+        throw new Error(
+          `Missing required collections: ${missingCollections.join(", ")}`
+        );
+      }
+
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      console.log("Collections verified:", collectionNames);
     } catch (error) {
       console.error("❌ Error connecting to MongoDB:", error);
-      process.exit(1);
+      throw error;
+    }
+  }
+
+  private async validateMongoConnection(): Promise<boolean> {
+    try {
+      const models = mongoose.modelNames();
+      const requiredModels = ["User", "Raffle", "Ticket"];
+      const missingModels = requiredModels.filter(
+        (model) => !models.includes(model)
+      );
+
+      if (missingModels.length > 0) {
+        console.error(`Missing required models: ${missingModels.join(", ")}`);
+        return false;
+      }
+
+      // Test connection by running a simple query
+      await mongoose.model("User").findOne({}).exec();
+      return true;
+    } catch (error) {
+      console.error("MongoDB validation failed:", error);
+      return false;
     }
   }
 
@@ -116,18 +173,14 @@ class Server {
 
   private async healthCheck(): Promise<boolean> {
     try {
-      // Check MongoDB connection
-      const isMongoConnected = mongoose.connection.readyState === 1;
-
-      // Check Redis connection
+      const isMongoConnected = await this.validateMongoConnection();
       const isRedisConnected = await redisService.healthCheck();
-
-      // Check gRPC services
       const grpcHealth = await this.grpcManager.healthCheck();
 
-      // Логируем состояние сервисов для мониторинга
       if (!grpcHealth.raffle || !grpcHealth.auth) {
-        console.warn("gRPC services health status:", {
+        console.warn("Services health status:", {
+          mongo: isMongoConnected ? "✅" : "❌",
+          redis: isRedisConnected ? "✅" : "❌",
           raffle: grpcHealth.raffle ? "✅" : "❌",
           auth: grpcHealth.auth ? "✅" : "❌",
         });
@@ -146,46 +199,48 @@ class Server {
   }
 
   async waitForGrpcServices(retries = 15, delay = 2000): Promise<void> {
-  console.log("Waiting for gRPC services to be ready...");
-  
-  for (let i = 0; i < retries; i++) {
-    try {
-      const health = await this.grpcManager.healthCheck();
-      
-      console.log("gRPC services health check result:", {
-        attempt: i + 1,
-        raffle: health.raffle ? "✅" : "❌",
-        auth: health.auth ? "✅" : "❌"
-      });
+    console.log("Waiting for gRPC services to be ready...");
 
-      if (health.auth && health.raffle) {
-        console.log("✅ Successfully connected to all gRPC services");
-        return;
-      }
-      
-      if (i < retries - 1) {
-        const nextDelay = delay * Math.pow(1.5, Math.min(i, 4)); // Exponential backoff with max
-        console.log(`Retrying in ${nextDelay}ms... (Attempt ${i + 1}/${retries})`);
-        await new Promise((resolve) => setTimeout(resolve, nextDelay));
-      }
-    } catch (error: any) {
-      console.error(`Attempt ${i + 1}/${retries} failed:`, {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        stack: error.stack
-      });
-      
-      if (i < retries - 1) {
-        const nextDelay = delay * Math.pow(1.5, Math.min(i, 4));
-        console.log(`Retrying in ${nextDelay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, nextDelay));
+    for (let i = 0; i < retries; i++) {
+      try {
+        const health = await this.grpcManager.healthCheck();
+
+        console.log("gRPC services health check result:", {
+          attempt: i + 1,
+          raffle: health.raffle ? "✅" : "❌",
+          auth: health.auth ? "✅" : "❌",
+        });
+
+        if (health.auth && health.raffle) {
+          console.log("✅ Successfully connected to all gRPC services");
+          return;
+        }
+
+        if (i < retries - 1) {
+          const nextDelay = delay * Math.pow(1.5, Math.min(i, 4));
+          console.log(
+            `Retrying in ${nextDelay}ms... (Attempt ${i + 1}/${retries})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, nextDelay));
+        }
+      } catch (error: any) {
+        console.error(`Attempt ${i + 1}/${retries} failed:`, {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          stack: error.stack,
+        });
+
+        if (i < retries - 1) {
+          const nextDelay = delay * Math.pow(1.5, Math.min(i, 4));
+          console.log(`Retrying in ${nextDelay}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, nextDelay));
+        }
       }
     }
+
+    throw new Error("Failed to connect to gRPC services after all retries");
   }
-  
-  throw new Error("Failed to connect to gRPC services after all retries");
-}
 
   public async start(): Promise<void> {
     try {
@@ -197,10 +252,10 @@ class Server {
       // Connect to MongoDB
       await this.connectMongo();
 
+      // Wait for gRPC services to be ready
       await this.waitForGrpcServices();
-      
-      // Redis is already initialized through the import
-      // Just verify the connection
+
+      // Check Redis connection
       const redisHealth = await redisService.healthCheck();
       if (!redisHealth) {
         throw new Error("Redis health check failed");
@@ -220,21 +275,29 @@ class Server {
         const isHealthy = await this.healthCheck();
         if (!isHealthy && !this.isShuttingDown) {
           console.error("❌ Service unhealthy. Initiating shutdown...");
-          await this.setupProcessHandlers();
+          await this.shutdown("HEALTH_CHECK_FAILED");
         }
-      }, 30000); // Check every 30 seconds
+      }, 30000);
     } catch (error) {
       console.error("❌ Error starting server:", error);
       process.exit(1);
     }
   }
+
+  private async shutdown(signal: string): Promise<void> {
+    await this.setupProcessHandlers();
+  }
 }
 
 // Start the server
-const server = Server.getInstance();
-server.start().catch((error) => {
-  console.error("❌ Failed to start server:", error);
-  process.exit(1);
-});
+(async () => {
+  try {
+    const server = await Server.getInstance();
+    await server.start();
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+})();
 
 export default Server;

@@ -2,11 +2,16 @@ import { ApiResponse } from "@/types/api";
 import { User } from "@/types/user";
 import { api } from "./api";
 
+interface InitializeUserResponse {
+  token: string;
+  user: User;
+}
+
 export const userApi = api.injectEndpoints({
   endpoints: (build) => ({
     initializeUser: build.mutation<
-      ApiResponse<User>,
-      { referralCode?: string; username?: string; telegramId: string }
+      ApiResponse<InitializeUserResponse | User>,
+      { referralCode?: string; initData: string; telegramId: string }
     >({
       query: (body) => ({
         url: "/users/initialize",

@@ -1,46 +1,49 @@
-import { FC, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import {
+  FC,
+  // useEffect
+} from "react";
+// import { useSearchParams } from "react-router-dom";
 import CubesLoading from "@/components/shared/Loading/CubesLoading";
 import { LogoFull } from "@/components/shared/UI/Icons/LogoFull";
-import { redirectToTelegram } from "@/helpers/redirectToTelegram";
-import { useSignMessageMutation } from "@/redux/services/wallet.api";
+// import { redirectToTelegram } from "@/helpers/redirectToTelegram";
+// import { useSignMessageMutation } from "@/redux/services/wallet.api";
 
 const VerifySignaturePage: FC = () => {
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
 
-  const data = searchParams.get("data");
-  const nonce = searchParams.get("nonce");
-  const userId = searchParams.get("userId");
+  // const data = searchParams.get("data");
+  // const nonce = searchParams.get("nonce");
+  // const userId = searchParams.get("userId");
 
-  const [signMessage] = useSignMessageMutation();
+  // const [signMessage] = useSignMessageMutation();
 
-  useEffect(() => {
-    const verifySignature = async () => {
-      if (!data || !nonce) {
-        alert(`Missing required parameters`);
-        return;
-      }
-      try {
-        signMessage({
-          telegramId: userId!,
-          data,
-          nonce,
-        })
-          .unwrap()
-          .then((res) => {
-            if (res.success) {
-              alert("SIGNED");
-              redirectToTelegram();
-            }
-          });
-      } catch {
-        alert("Failed to verify signature");
-        redirectToTelegram();
-      }
-    };
+  // useEffect(() => {
+  //   const verifySignature = async () => {
+  //     if (!data || !nonce) {
+  //       alert(`Missing required parameters`);
+  //       return;
+  //     }
+  //     try {
+  //       signMessage({
+  //         telegramId: userId!,
+  //         data,
+  //         nonce,
+  //       })
+  //         .unwrap()
+  //         .then((res) => {
+  //           if (res.success) {
+  //             alert("SIGNED");
+  //             redirectToTelegram();
+  //           }
+  //         });
+  //     } catch {
+  //       alert("Failed to verify signature");
+  //       redirectToTelegram();
+  //     }
+  //   };
 
-    verifySignature();
-  }, [userId, signMessage, nonce, data]);
+  //   verifySignature();
+  // }, [userId, signMessage, nonce, data]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">

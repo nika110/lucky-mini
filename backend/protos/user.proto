@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package user;
+
+message UserProfile {
+    string id = 1;
+    string telegram_id = 2;
+    string ton_public_key = 3;
+    double balance = 4;
+    int64 created_at = 5;
+    int32 xp = 6 ;
+    optional string referred_by = 7;
+    repeated string referrals = 8;
+}
+
+message Ticket {
+    string raffle_id = 1;
+    string ticket_number = 2;
+    string user_id = 3;
+    int64 purchase_time = 4;
+}

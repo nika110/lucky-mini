@@ -4,18 +4,20 @@ import type * as grpc from "@grpc/grpc-js";
 // User Types
 export interface UserProfile {
   id: string;
-  telegramId: string;
-  tonPublicKey: string;
+  telegram_id: string;
+  ton_public_key: string;
   balance: number;
-  createdAt: number;
+  created_at: number;
   xp: number;
-  referredBy?: string;
+  referred_by?: string;
+  referrals: string[];
 }
 
 // Auth Types
 export interface AuthTelegramRequest {
-  telegramId: string;
-  referredBy?: string;
+  telegram_id: string;
+  telegram_auth_code: string;
+  referred_by?: string;
 }
 
 export interface AuthTelegramResponse {
@@ -24,8 +26,8 @@ export interface AuthTelegramResponse {
 }
 
 export interface UpdateTonWalletRequest {
-  telegramId: string;
-  tonPublicKey: string;
+  telegram_id: string;
+  ton_public_key: string;
 }
 
 export interface UpdateTonWalletResponse {
@@ -37,8 +39,31 @@ export interface ValidateTokenRequest {
 }
 
 export interface ValidateTokenResponse {
-  isValid: boolean;
+  is_valid: boolean;
   user: UserProfile;
+}
+
+export interface UpdateUserReferralRequest {
+  user_id: string;
+  referred_by: string;
+}
+
+export interface UpdateUserReferralResponse {
+  user: UserProfile;
+}
+
+export interface GetConfigRequest {}
+
+export interface GetConfigResponse {
+  ticket_price: number;
+}
+
+export interface ListUserReferralsRequest {
+  user_id: string;
+}
+
+export interface ListUserReferralsResponse {
+  telegram_ids: string[];
 }
 
 // Auth Service Client Interface
@@ -72,6 +97,36 @@ export interface AuthServiceClient extends grpc.Client {
       response: ValidateTokenResponse
     ) => void
   ): grpc.ClientUnaryCall;
+
+  updateUserReferral(
+    request: UpdateUserReferralRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: UpdateUserReferralResponse
+    ) => void
+  ): grpc.ClientUnaryCall;
+
+  getConfig(
+    request: GetConfigRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetConfigResponse
+    ) => void
+  ): grpc.ClientUnaryCall;
+
+  listUserReferrals(
+    request: ListUserReferralsRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: ListUserReferralsResponse
+    ) => void
+  ): grpc.ClientUnaryCall;
 }
 
 // Auth Service Interface
@@ -87,6 +142,15 @@ export interface AuthServiceServer extends grpc.UntypedServiceImplementation {
   validateToken: grpc.handleUnaryCall<
     ValidateTokenRequest,
     ValidateTokenResponse
+  >;
+  updateUserReferral: grpc.handleUnaryCall<
+    UpdateUserReferralRequest,
+    UpdateUserReferralResponse
+  >;
+  getConfig: grpc.handleUnaryCall<GetConfigRequest, GetConfigResponse>;
+  listUserReferrals: grpc.handleUnaryCall<
+    ListUserReferralsRequest,
+    ListUserReferralsResponse
   >;
 }
 
@@ -125,40 +189,90 @@ export const AuthServiceService: grpc.ServiceDefinition<AuthServiceServer> = {
       Buffer.from(JSON.stringify(value)),
     responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
   },
+  updateUserReferral: {
+    path: "/auth.AuthService/UpdateUserReferral",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: UpdateUserReferralRequest) =>
+      Buffer.from(JSON.stringify(value)),
+    requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+    responseSerialize: (value: UpdateUserReferralResponse) =>
+      Buffer.from(JSON.stringify(value)),
+    responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+  },
+  getConfig: {
+    path: "/auth.AuthService/GetConfig",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetConfigRequest) =>
+      Buffer.from(JSON.stringify(value)),
+    requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+    responseSerialize: (value: GetConfigResponse) =>
+      Buffer.from(JSON.stringify(value)),
+    responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+  },
+  listUserReferrals: {
+    path: "/auth.AuthService/ListUserReferrals",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ListUserReferralsRequest) =>
+      Buffer.from(JSON.stringify(value)),
+    requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+    responseSerialize: (value: ListUserReferralsResponse) =>
+      Buffer.from(JSON.stringify(value)),
+    responseDeserialize: (value: Buffer) => {
+      return JSON.parse(value.toString());
+    },
+  },
 };
 
+// !!!!!!!!!!!!
+// ____________
 // Raffle Types
+
 export interface PurchaseTicketsRequest {
-  userId: string;
-  ticketCount: number;
+  user_id: string;
+  ticket_count: number;
 }
 
 export interface PurchaseTicketsResponse {
-  ticketNumbers: string[];
-  raffleId: string;
+  ticket_numbers: string[];
+  raffle_id: string;
 }
 
-export interface GetCurrentRaffleRequest {}
+export interface GetCurrentRaffleRequest {
+  user_auth_token: string;
+}
 
 export interface GetCurrentRaffleResponse {
-  raffleId: string;
-  endTime: number;
-  currentPool: number;
+  raffle_id: string;
+  end_time: number;
+  current_pool: number;
+  participating: boolean;
+}
+
+export interface IncreaseBalanceRequest {
+  user_id: string;
+  amount: number;
+}
+
+export interface IncreaseBalanceResponse {
+  balance: number;
 }
 
 export interface GetRaffleResultsRequest {
-  raffleId: string;
+  raffle_id: string;
 }
 
 export interface Winner {
-  userId: string;
+  user_id: string;
   amount: number;
   position: number;
 }
 
 export interface GetRaffleResultsResponse {
   winners: Winner[];
-  totalPool: number;
+  total_pool: number;
 }
 
 // Raffle Service Client Interface
@@ -192,6 +306,15 @@ export interface RaffleServiceClient extends grpc.Client {
       response: GetRaffleResultsResponse
     ) => void
   ): grpc.ClientUnaryCall;
+  increaseBalance(
+    request: IncreaseBalanceRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: IncreaseBalanceResponse
+    ) => void
+  ): grpc.ClientUnaryCall;
 }
 
 // Raffle Service Interface
@@ -207,6 +330,10 @@ export interface RaffleServiceServer extends grpc.UntypedServiceImplementation {
   getRaffleResults: grpc.handleUnaryCall<
     GetRaffleResultsRequest,
     GetRaffleResultsResponse
+  >;
+  increaseBalance: grpc.handleUnaryCall<
+    IncreaseBalanceRequest,
+    IncreaseBalanceResponse
   >;
 }
 
@@ -243,6 +370,17 @@ export const RaffleServiceService: grpc.ServiceDefinition<RaffleServiceServer> =
         Buffer.from(JSON.stringify(value)),
       requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
       responseSerialize: (value: GetRaffleResultsResponse) =>
+        Buffer.from(JSON.stringify(value)),
+      responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+    },
+    increaseBalance: {
+      path: "/raffle.RaffleService/IncreaseBalance",
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: (value: IncreaseBalanceRequest) =>
+        Buffer.from(JSON.stringify(value)),
+      requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+      responseSerialize: (value: IncreaseBalanceResponse) =>
         Buffer.from(JSON.stringify(value)),
       responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
     },

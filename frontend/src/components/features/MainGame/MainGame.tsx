@@ -1,27 +1,46 @@
 import { FC, useState } from "react";
-import NumberFormatter from "@/components/shared/NumberFormatter/NumberFormatter";
+// import NumberFormatter from "@/components/shared/NumberFormatter/NumberFormatter";
 import { Button } from "@/components/shared/UI/button";
 import { Chip } from "@/components/shared/UI/Icons/Chip";
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import { Copy } from "@/components/shared/UI/Icons/Copy";
 import { formatNumber } from "@/helpers/formatCount";
+import { AmountShowcase } from "@/components/shared/AmountShowcase/AmountShowcase";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/shared/UI/dialog";
 
 const MainGame: FC = () => {
-  const [prizePool] = useState(134567);
+  // const [prizePool] = useState(5);
+
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] =
+    useState<boolean>(false);
+
+  const [testD, setTestD] = useState<number>(0);
+
+  const initializePurchase = () => {
+    setIsPurchaseModalOpen(true);
+  };
 
   return (
     <section className={"pt-16"}>
+      <Dialog
+        open={isPurchaseModalOpen}
+        onOpenChange={(v) => setIsPurchaseModalOpen(v)}
+      >
+        <DialogTrigger>Open</DialogTrigger>
+        <DialogContent>
+          
+        </DialogContent>
+      </Dialog>
       <div className="container">
         {/* PRIZE POOL */}
         <h1 className="text-xl text-center uppercase mb-4">prize pool:</h1>
+
         <div className="relative flex justify-center">
-          <span className="inline-block text-2xl leading-none uppercase">
-            <span className="text-dim">$</span>
-            <span className="relative text-white">
-              <NumberFormatter value={prizePool} />
-              <span className="inline-block text-white bg-marigold absolute bottom-[-2px] right-0 left-[4px] w-[calc(100%-8px)] h-[2px]" />
-            </span>
-          </span>
+          <AmountShowcase defaultAmount={testD} />
         </div>
 
         {/* TIME REMAINING */}
@@ -46,8 +65,16 @@ const MainGame: FC = () => {
 
         {/* BUY TICKETS */}
         <div className="grid px-3.5 grid-cols-2 mt-14 justify-center items-center gap-4">
-          <Button>Buy Ticket</Button>
-          <Button variant={"ghost"}>How it works</Button>
+          <Button onClick={() => initializePurchase()}>Buy Ticket</Button>
+          <Button
+            variant={"ghost"}
+            onClick={() => {
+              // setTestD(Math.floor(Math.random() * 7) + 1);
+              setTestD(testD + 1);
+            }}
+          >
+            How it works
+          </Button>
         </div>
         <a
           href="https://www.google.com"

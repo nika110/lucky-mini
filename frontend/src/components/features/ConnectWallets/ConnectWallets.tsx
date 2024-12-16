@@ -3,6 +3,7 @@ import { Button } from "@/components/shared/UI/button";
 import {
   Drawer,
   DrawerContent,
+  DrawerTitle,
   DrawerTrigger,
 } from "@/components/shared/UI/drawerCustom";
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
@@ -11,8 +12,8 @@ import { SOLHugeIcon } from "@/components/shared/UI/Icons/SOLHuge";
 import { TONHuge } from "@/components/shared/UI/Icons/TONHuge";
 import {
   useTonConnectModal,
-  // useTonWallet,
-  // useTonConnectUI,
+  useTonWallet,
+  useTonConnectUI,
 } from "@tonconnect/ui-react";
 // import { ROUTES } from "@/routes/routes";
 // import { useInitiWalletMutation } from "@/redux/services/wallet.api";
@@ -32,6 +33,8 @@ import { LOCAL_STORAGE_KEYS } from "@/utils/localStorage";
 const ConnectWallets: FC = () => {
   const isInitLocal = localStorage.getItem(LOCAL_STORAGE_KEYS.TG_INIT_USER);
   const [isOpenSelect, setIsOpenSelect] = useState(false);
+
+  const tonWallet = useTonWallet();
 
   // const [initiWallet] = useInitiWalletMutation();
 
@@ -86,10 +89,13 @@ const ConnectWallets: FC = () => {
 
   // TON wallet logic
 
-  // const [tonConnectUI] = useTonConnectUI();
+  const [tonConnectUI] = useTonConnectUI();
   const { open: openTonConnect } = useTonConnectModal();
 
-  const handleTonConnect = () => {
+  const handleTonConnect = async () => {
+    if (tonWallet) {
+      await tonConnectUI.disconnect();
+    }
     openTonConnect();
     setIsOpenSelect(false);
   };
@@ -110,9 +116,7 @@ const ConnectWallets: FC = () => {
         </DrawerTrigger>
         <DrawerContent>
           <div className="pb-20">
-            <h2 className="text-center text-base leading-5 uppercase mx-auto mb-4 max-w-[260px]">
-              Connect via one of these wallets
-            </h2>
+            <DrawerTitle>Connect via one of these wallets</DrawerTitle>
             <div className={`gap-4 ${cl.selectType}`}>
               <div className="relative">
                 <div className="absolute text-center h-[15px] z-10 text-lg leading-none left-0 right-0 bottom-0 top-0 m-auto">

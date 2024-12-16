@@ -1,84 +1,120 @@
-import { RaffleClient, AuthClient } from "./grpc-client";
-import * as grpc from "@grpc/grpc-js";
+import grpc from "@grpc/grpc-js";
+import { AuthClient, RaffleClient } from "./grpc-client";
+
+interface HealthCheckResult {
+  raffle: boolean;
+  auth: boolean;
+}
 
 export class GrpcManager {
-  private static instance: GrpcManager;
-  private raffleClient: RaffleClient;
-  private authClient: AuthClient;
-  private isShuttingDown: boolean = false;
+  private static instance: GrpcManager | null = null;
+  private static initializationPromise: Promise<GrpcManager> | null = null;
+  private raffleClient: RaffleClient | null = null;
+  private authClient: AuthClient | null = null;
+  private isInitialized: boolean = false;
 
-  private constructor() {
-    const RAFFLE_HOST = process.env.RAFFLE_SERVICE_HOST || "app";
-    const AUTH_HOST = process.env.AUTH_SERVICE_HOST || "app";
-    const RAFFLE_PORT = process.env.RAFFLE_SERVICE_PORT || "50052";
-    const AUTH_PORT = process.env.AUTH_SERVICE_PORT || "50052";
+  private constructor() {}
 
-    this.raffleClient = new RaffleClient(`${RAFFLE_HOST}:${RAFFLE_PORT}`);
-    this.authClient = new AuthClient(`${AUTH_HOST}:${AUTH_PORT}`);
+  private async initialize(): Promise<void> {
+    try {
+      const RAFFLE_HOST = process.env.RAFFLE_SERVICE_HOST || "localhost";
+      const RAFFLE_PORT = process.env.RAFFLE_SERVICE_PORT || "50052";
+      const AUTH_HOST = process.env.AUTH_SERVICE_HOST || "localhost";
+      const AUTH_PORT = process.env.AUTH_SERVICE_PORT || "50052";
 
-    console.log(`Connecting to Raffle service at: ${RAFFLE_HOST}:${RAFFLE_PORT}`);
-    console.log(`Connecting to Auth service at: ${AUTH_HOST}:${AUTH_PORT}`);
+      console.log("Initializing gRPC clients...");
+      console.log(`Raffle: ${RAFFLE_HOST}:${RAFFLE_PORT}`);
+      console.log(`Auth: ${AUTH_HOST}:${AUTH_PORT}`);
+
+      this.raffleClient = new RaffleClient(`${RAFFLE_HOST}:${RAFFLE_PORT}`);
+      this.authClient = new AuthClient(`${AUTH_HOST}:${AUTH_PORT}`);
+
+      await Promise.all([
+        this.raffleClient.waitForReady(),
+        this.authClient.waitForReady(),
+      ]);
+
+      this.isInitialized = true;
+      console.log("✅ gRPC clients initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize gRPC clients:", error);
+      this.isInitialized = false;
+      throw error;
+    }
   }
 
-  public static getInstance(): GrpcManager {
+  public static async getInstance(): Promise<GrpcManager> {
     if (!GrpcManager.instance) {
       GrpcManager.instance = new GrpcManager();
+      // Сохраняем промис инициализации
+      GrpcManager.initializationPromise = GrpcManager.instance
+        .initialize()
+        .then(() => GrpcManager.instance!);
     }
+
+    if (GrpcManager.initializationPromise) {
+      await GrpcManager.initializationPromise;
+    }
+
     return GrpcManager.instance;
   }
 
   public getRaffleClient(): RaffleClient {
+    if (!this.isInitialized || !this.raffleClient) {
+      throw new Error("GrpcManager not initialized yet");
+    }
     return this.raffleClient;
   }
 
   public getAuthClient(): AuthClient {
+    if (!this.isInitialized || !this.authClient) {
+      throw new Error("GrpcManager not initialized yet");
+    }
     return this.authClient;
   }
 
-  public async healthCheck(): Promise<{
-    raffle: boolean;
-    auth: boolean;
-  }> {
-    const health = {
+  public async healthCheck(): Promise<HealthCheckResult> {
+    if (!this.isInitialized) {
+      return { raffle: false, auth: false };
+    }
+
+    const health: HealthCheckResult = {
       raffle: false,
       auth: false,
     };
 
-    if (this.isShuttingDown) {
-      return health;
-    }
-
     try {
-      await this.raffleClient.getCurrentRaffle();
-      health.raffle = true;
+      if (this.raffleClient?.isReady()) {
+        // await this.raffleClient.();
+        health.raffle = true;
+      }
     } catch (error: any) {
-      console.error("Raffle service health check failed:", {
+      console.error("Raffle health check failed:", {
+        message: error.message,
         code: error.code,
         details: error.details,
-        message: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
     }
 
     try {
-      const response = await this.authClient.validateToken("health-check");
-      console.log("Auth validateToken response:", response);
-      health.auth = true;
+      if (this.authClient?.isReady()) {
+        await this.authClient.validateToken("health-check");
+        health.auth = true;
+      }
     } catch (error: any) {
-      if (error.code === grpc.status.UNAUTHENTICATED || 
-          error.code === grpc.status.INVALID_ARGUMENT) {
-        console.log("Expected auth error (service is up):", {
-          code: error.code,
-          details: error.details
-        });
+      // Special case: these errors mean the service is actually working
+      if (
+        error.code === grpc.status.UNAUTHENTICATED ||
+        error.code === grpc.status.INVALID_ARGUMENT
+      ) {
         health.auth = true;
       } else {
-        console.error("Auth service health check failed:", {
+        console.error("Auth health check failed:", {
+          message: error.message,
           code: error.code,
           details: error.details,
-          message: error.message,
           stack: error.stack,
-          metadata: error.metadata?.getMap()
         });
       }
     }
@@ -87,6 +123,16 @@ export class GrpcManager {
   }
 
   public async shutdown(): Promise<void> {
-    this.isShuttingDown = true;
+    if (this.raffleClient) {
+      // Add cleanup if needed
+    }
+    if (this.authClient) {
+      // Add cleanup if needed
+    }
+    this.isInitialized = false;
+  }
+
+  public isReady(): boolean {
+    return this.isInitialized;
   }
 }

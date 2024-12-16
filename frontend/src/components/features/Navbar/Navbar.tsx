@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import cl from "./Navbar.module.css";
 import { ROUTES } from "@/routes/routes";
 import { HomeIcon } from "@/components/shared/UI/Icons/HomeIcon";
@@ -6,6 +6,10 @@ import { Link, useLocation } from "react-router-dom";
 import { FrensIcon } from "@/components/shared/UI/Icons/FrensIcon";
 import { LeadersIcon } from "@/components/shared/UI/Icons/LeadersIcon";
 import { WalletIcon } from "@/components/shared/UI/Icons/WalletIcon";
+import { useTonWallet } from "@tonconnect/ui-react";
+import { useUpdateWalletMutation } from "@/redux/services/wallet.api";
+import { useTelegramUser } from "@/hooks/useTelegramUser";
+import { toast } from "sonner";
 
 interface NavbarLink {
   route: string;
@@ -48,7 +52,34 @@ const Navbar: FC = () => {
     .map((link) => link.route)
     .indexOf(pathname.pathname);
 
+  const { user } = useTelegramUser();
+
   const [activeItem, setActiveItem] = useState<number>(defaultItem);
+  const tonWallet = useTonWallet();
+
+  const [updateTonWallet] = useUpdateWalletMutation();
+
+  useEffect(() => {
+    if (tonWallet && user) {
+      // USING ADDRES FOR NOW
+      const tonPublicKey = tonWallet.account.address;
+      console.log("TON PUBLIC", tonPublicKey, user.ton_public_key);
+
+      if (tonPublicKey && tonPublicKey !== user.ton_public_key) {
+        // console.log("TON PUBLIC", tonPublicKey);
+        updateTonWallet({
+          tonPublicKey,
+          telegramId: user.telegram_id,
+        })
+          .unwrap()
+          .catch(() => {
+            toast.error(
+              "Failed to connect your wallet to our service please try again later!"
+            );
+          });
+      }
+    }
+  }, [tonWallet, updateTonWallet, user]);
 
   return (
     <>

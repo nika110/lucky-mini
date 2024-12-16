@@ -16,6 +16,10 @@ import {
   UpdateTonWalletResponse,
   ValidateTokenRequest,
   ValidateTokenResponse,
+  GetCurrentRaffleRequest,
+  GetConfigResponse,
+  ListUserReferralsResponse,
+  ListUserReferralsRequest,
 } from "../generated/service";
 
 interface GrpcError extends Error {
@@ -58,16 +62,12 @@ class BaseGrpcClient {
 
 export class RaffleClient extends BaseGrpcClient {
   private client: RaffleServiceClient;
+  private isInitialized: boolean = false;
 
-  constructor(
-    host: string = process.env.RAFFLE_SERVICE_HOST || "localhost:50052"
-  ) {
+  constructor(host: string) {
     super();
-    const currentDir = __dirname;
-
-    const rootDir = path.resolve(currentDir, "../..");
-
-    const protoPath = path.join(rootDir, "protos", "raffle.proto");
+    const protoPath = path.resolve(__dirname, "../../protos/raffle.proto");
+    console.log("Proto path:", protoPath);
 
     const packageDefinition = protoLoader.loadSync(protoPath, {
       keepCase: true,
@@ -75,21 +75,53 @@ export class RaffleClient extends BaseGrpcClient {
       enums: String,
       defaults: true,
       oneofs: true,
-      includeDirs: [path.join(rootDir, "proto")],
     });
 
-    const proto = grpc.loadPackageDefinition(packageDefinition) as any;
-    this.client = new proto.raffle.RaffleService(
+    const protoDescriptor = grpc.loadPackageDefinition(
+      packageDefinition
+    ) as any;
+    console.log("Available services:", Object.keys(protoDescriptor));
+
+    if (!protoDescriptor.raffle?.RaffleService) {
+      throw new Error("RaffleService not found in proto definition");
+    }
+
+    this.client = new protoDescriptor.raffle.RaffleService(
       host,
       grpc.credentials.createInsecure()
     );
+  }
+
+  // Public method to check connection
+  public async waitForReady(timeoutMs: number = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const deadline = new Date().setMilliseconds(
+        new Date().getMilliseconds() + timeoutMs
+      );
+      this.client.waitForReady(deadline, (error) => {
+        if (error) {
+          this.isInitialized = false;
+          reject(error);
+        } else {
+          this.isInitialized = true;
+          resolve();
+        }
+      });
+    });
+  }
+
+  public isReady(): boolean {
+    return this.isInitialized;
   }
 
   async purchaseTickets(
     userId: string,
     ticketCount: number
   ): Promise<PurchaseTicketsResponse> {
-    const request: PurchaseTicketsRequest = { userId, ticketCount };
+    const request: PurchaseTicketsRequest = {
+      user_id: userId,
+      ticket_count: ticketCount,
+    };
 
     return new Promise((resolve, reject) => {
       this.client.purchaseTickets(
@@ -107,10 +139,15 @@ export class RaffleClient extends BaseGrpcClient {
     });
   }
 
-  async getCurrentRaffle(): Promise<GetCurrentRaffleResponse> {
+  async getCurrentRaffle(
+    userAuthToken: string
+  ): Promise<GetCurrentRaffleResponse> {
+    const request: GetCurrentRaffleRequest = {
+      user_auth_token: userAuthToken,
+    };
     return new Promise((resolve, reject) => {
       this.client.getCurrentRaffle(
-        {},
+        request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
         (error, response) => {
@@ -124,8 +161,8 @@ export class RaffleClient extends BaseGrpcClient {
     });
   }
 
-  async getRaffleResults(raffleId: string): Promise<GetRaffleResultsResponse> {
-    const request: GetRaffleResultsRequest = { raffleId };
+  async getRaffleResults(raffle_id: string): Promise<GetRaffleResultsResponse> {
+    const request: GetRaffleResultsRequest = { raffle_id };
 
     return new Promise((resolve, reject) => {
       this.client.getRaffleResults(
@@ -145,11 +182,10 @@ export class RaffleClient extends BaseGrpcClient {
 }
 
 export class AuthClient extends BaseGrpcClient {
-  private client: AuthServiceClient;
+  private grpcClient: AuthServiceClient;
+  private isInitialized: boolean = false;
 
-  constructor(
-    host: string = process.env.AUTH_SERVICE_HOST || "localhost:50052"
-  ) {
+  constructor(host: string) {
     super();
     const currentDir = __dirname;
     const rootDir = path.resolve(currentDir, "../..");
@@ -168,20 +204,93 @@ export class AuthClient extends BaseGrpcClient {
     );
 
     const proto = grpc.loadPackageDefinition(packageDefinition) as any;
-    this.client = new proto.auth.AuthService(
+    this.grpcClient = new proto.auth.AuthService(
       host,
       grpc.credentials.createInsecure()
     );
   }
 
+  public async waitForReady(timeoutMs: number = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const deadline = new Date().setMilliseconds(
+        new Date().getMilliseconds() + timeoutMs
+      );
+      this.grpcClient.waitForReady(deadline, (error) => {
+        if (error) {
+          this.isInitialized = false;
+          reject(error);
+        } else {
+          this.isInitialized = true;
+          resolve();
+        }
+      });
+    });
+  }
+
+  public isReady(): boolean {
+    return this.isInitialized;
+  }
+
   async authenticateTelegram(
-    telegramId: string,
-    referredBy?: string
+    telegram_id: string,
+    telegram_auth_code: string,
+    referred_by?: string
   ): Promise<AuthTelegramResponse> {
-    const request: AuthTelegramRequest = { telegramId, referredBy };
+    if (!this.isInitialized) {
+      throw new Error("gRPC client not initialized");
+    }
+
+    const request: AuthTelegramRequest = {
+      telegram_id,
+      referred_by,
+      telegram_auth_code,
+    };
 
     return new Promise((resolve, reject) => {
-      this.client.authenticateTelegram(
+      this.grpcClient.authenticateTelegram(
+        request,
+        new grpc.Metadata(),
+        { deadline: this.createDeadline() },
+        (error, response) => {
+          if (error) {
+            reject(this.handleGrpcError(error as GrpcError));
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  }
+
+  async getConfig(): Promise<GetConfigResponse> {
+    if (!this.isInitialized) {
+      throw new Error("gRPC client not initialized");
+    }
+    return new Promise((resolve, reject) => {
+      this.grpcClient.getConfig(
+        {},
+        new grpc.Metadata(),
+        { deadline: this.createDeadline() },
+        (error, response) => {
+          if (error) {
+            reject(this.handleGrpcError(error as GrpcError));
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  }
+
+  async listUserReferrals(user_id: string): Promise<ListUserReferralsResponse> {
+    if (!this.isInitialized) {
+      throw new Error("gRPC client not initialized");
+    }
+
+    const request: ListUserReferralsRequest = { user_id };
+
+    return new Promise((resolve, reject) => {
+      this.grpcClient.listUserReferrals(
         request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
@@ -197,13 +306,17 @@ export class AuthClient extends BaseGrpcClient {
   }
 
   async updateTonWallet(
-    telegramId: string,
-    tonPublicKey: string
+    telegram_id: string,
+    ton_public_key: string
   ): Promise<UpdateTonWalletResponse> {
-    const request: UpdateTonWalletRequest = { telegramId, tonPublicKey };
+    if (!this.isInitialized) {
+      throw new Error("gRPC client not initialized");
+    }
+
+    const request: UpdateTonWalletRequest = { telegram_id, ton_public_key };
 
     return new Promise((resolve, reject) => {
-      this.client.updateTonWallet(
+      this.grpcClient.updateTonWallet(
         request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
@@ -219,10 +332,14 @@ export class AuthClient extends BaseGrpcClient {
   }
 
   async validateToken(token: string): Promise<ValidateTokenResponse> {
+    if (!this.isInitialized) {
+      throw new Error("gRPC client not initialized");
+    }
+
     const request: ValidateTokenRequest = { token };
 
     return new Promise((resolve, reject) => {
-      this.client.validateToken(
+      this.grpcClient.validateToken(
         request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
