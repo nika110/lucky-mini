@@ -88,6 +88,58 @@ export class UserController {
     }
   }
 
+  public async getConfig(
+    req: Request<IUserGet>,
+    res: Response<ApiResponse<any>>
+  ) {
+    try {
+      const { telegramId } = req.params;
+
+      const user = await UserSchema.findOne({ telegram_id: telegramId })
+        .select("-__v") // stuff users
+        .lean(); // return object instead of Mongoose doc
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+          data: null,
+        });
+      }
+
+      try {
+        const authClient = this.grpcManager.getAuthClient();
+        if (!authClient.isReady()) {
+          return res.status(503).json({
+            success: false,
+            message: "Auth service temporarily unavailable",
+            data: null,
+          });
+        }
+
+        const configResponse = await authClient.getConfig();
+
+        return res.status(200).json({
+          success: true,
+          data: configResponse,
+          message: "Config retrieved successfully",
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Internal server error while fetching gRPC data",
+          data: null,
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error while fetching config data",
+        data: null,
+      });
+    }
+  }
+
   public async initUser(
     req: Request<{}, {}, IUserRegistration>,
     res: Response<ApiResponse<any>>
@@ -141,6 +193,58 @@ export class UserController {
         });
       }
     } catch (error) {}
+  }
+
+  public async getReferralList(
+    req: Request<IUserGet>,
+    res: Response<ApiResponse<any>>
+  ) {
+    try {
+      const { telegramId } = req.params;
+
+      const user = await UserSchema.findOne({ telegram_id: telegramId })
+        .select("-__v") // stuff users
+        .lean(); // return object instead of Mongoose doc
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+          data: null,
+        });
+      }
+
+      try {
+        const authClient = this.grpcManager.getAuthClient();
+        if (!authClient.isReady()) {
+          return res.status(503).json({
+            success: false,
+            message: "Auth service temporarily unavailable",
+            data: null,
+          });
+        }
+
+        const authResponse = await authClient.listUserReferrals(user.id);
+
+        return res.status(200).json({
+          success: true,
+          data: authResponse,
+          message: "Referral list retrieved successfully",
+        });
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          message: "Internal server error while fetching gRPC data",
+          data: null,
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error while fetching user data",
+        data: null,
+      });
+    }
   }
 
   public static async getUser(

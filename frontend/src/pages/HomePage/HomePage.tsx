@@ -10,10 +10,11 @@ const HomePage: FC = () => {
   if (isSuccess && user) {
     console.log(user);
   }
+
   return (
     <div>
-      <Header />
-      <MainGame />
+      <Header user={user} />
+      <MainGame user={user} />
       <Navbar />
     </div>
   );

@@ -13,6 +13,8 @@ const router = express.Router();
 enum ROUTES {
   INIT = "/initialize",
   GET_USER = "/:telegramId",
+  GET_REFERRAL_LIST = "/:telegramId/referrals",
+  GET_CONFIG = "/:telegramId/config",
   // WALLET
   UPDATE_TON_WALLET = "/:telegramId/update-ton-wallet",
   // RAFFLES
@@ -48,6 +50,28 @@ let userController: UserController;
 
 // ____
 // USER
+
+router.get(ROUTES.GET_REFERRAL_LIST, (req, res) => {
+  if (!userController) {
+    return res.status(503).json({
+      success: false,
+      message: "Service is initializing - userController",
+      data: null,
+    });
+  }
+  return userController.getReferralList(req, res);
+});
+
+router.get(ROUTES.GET_CONFIG, (req, res) => {
+  if (!userController) {
+    return res.status(503).json({
+      success: false,
+      message: "Service is initializing - userController",
+      data: null,
+    });
+  }
+  return userController.getConfig(req, res);
+});
 
 router.post(ROUTES.INIT, (req, res) => {
   if (!userController) {

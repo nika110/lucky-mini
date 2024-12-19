@@ -102,10 +102,14 @@ html {
 body {
   font-family: "PressStart2P-Regular", sans-serif !important;
   background: var(--dark-bg) !important;
-  color: white;
   overflow: hidden;
   scrollbar-width: 0px;
 }
+
+* {
+  color: #ffffff;
+}
+
 
 body::-webkit-scrollbar {
   width: 0px;

@@ -21,7 +21,6 @@ service AuthService {
 
     rpc GetConfig(GetConfigRequest) returns (GetConfigResponse);
 
-
 }
 
 

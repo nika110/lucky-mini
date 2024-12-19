@@ -16,6 +16,14 @@ const baseQuery = fetchBaseQuery({
           resolve(null);
         }
       })
+      //  WebApp.CloudStorage.removeItem(STORAGE_KEYS.TOKEN, (_, r) => {
+      //   if (r && typeof r === "string") {
+      //     resolve(r);
+      //   } else {
+      //     resolve(null);
+      //   }
+      // })
+
     );
 
     if (token) {

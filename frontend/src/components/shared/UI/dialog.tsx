@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { Close } from "./Icons/Close";
 import { PixelWrapper } from "./PixelWrapper/pixelWrapper";
+import { cva, VariantProps } from "class-variance-authority";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -28,18 +29,36 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+const dialogContentVariants = cva(
+  "fixed bg-inkwell top-[20lvh] left-0 right-0 mx-auto z-50 grid w-[calc(100vw-2rem)] max-w-lg border-none py-4 px-3 shadow-none",
+  {
+    variants: {
+      variant: {
+        default: "",
+        info: "min-h-[280px] px-7 text-center flex flex-col justify-center uppercase items-center gap-7",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
+
+export interface DialogContentProps
+  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+    VariantProps<typeof dialogContentVariants> {
+  asChild?: boolean;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  DialogContentProps
+>(({ className, children, variant, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      className={cn(
-        "fixed bg-inkwell top-[20lvh] left-0 right-0 mx-auto z-50 grid w-[calc(100vw-2rem)] max-w-lg border-none py-4 px-3 shadow-none",
-        className
-      )}
+      className={cn(dialogContentVariants({ variant, className }))}
       {...props}
     >
       <PixelWrapper width={3} color="gray" />

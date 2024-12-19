@@ -3,7 +3,6 @@ import { ROUTES } from "@/routes/routes";
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import ConnectWallets from "../ConnectWallets/ConnectWallets";
-import { useTelegramUser } from "@/hooks/useTelegramUser";
 import { Skeleton } from "@/components/shared/UI/skeleton";
 // import { useGetWalletQuery } from "@/redux/services/wallet.api";
 // import { BLOCKCHAINS, SolanaWalletData } from "@/types/wallet";
@@ -21,9 +20,12 @@ import {
 } from "@/components/shared/UI/popover";
 import WebApp from "@twa-dev/sdk";
 
-const Header: FC = () => {
+interface HeaderProps {
+  user: User | null;
+}
+
+const Header: FC<HeaderProps> = ({ user }) => {
   // const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  const { user } = useTelegramUser();
   // const { data: wallet, isSuccess } = useGetWalletQuery(
   //   {
   //     telegramId: tgUser!.id! + "",

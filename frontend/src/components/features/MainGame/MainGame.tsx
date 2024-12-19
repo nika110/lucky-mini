@@ -1,46 +1,168 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 // import NumberFormatter from "@/components/shared/NumberFormatter/NumberFormatter";
 import { Button } from "@/components/shared/UI/button";
 import { Chip } from "@/components/shared/UI/Icons/Chip";
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import { Copy } from "@/components/shared/UI/Icons/Copy";
 import { formatNumber } from "@/helpers/formatCount";
-import { AmountShowcase } from "@/components/shared/AmountShowcase/AmountShowcase";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/shared/UI/dialog";
+import { useAppDispatch } from "@/redux/store";
+import { MODALS, toggleModal } from "@/redux/features/modals.reducer";
+import BuyTicketsModal from "../../shared/Modals/BuyTicketsModal";
+import { User } from "@/types/user";
+import WalletNotConnectedModal from "@/components/shared/Modals/WalletConnectedModal";
+import LoadingPurchaseModal from "@/components/shared/Modals/LoadingPurchaseModal";
+import { CHAIN, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
+import { usePurchaseTicketsMutation } from "@/redux/services/wallet.api";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 
-const MainGame: FC = () => {
+interface MainGameProps {
+  user: User | null;
+}
+
+const MainGame: FC<MainGameProps> = ({ user }) => {
   // const [prizePool] = useState(5);
-
-  const [isPurchaseModalOpen, setIsPurchaseModalOpen] =
-    useState<boolean>(false);
-
+  const dispatch = useAppDispatch();
   const [testD, setTestD] = useState<number>(0);
 
-  const initializePurchase = () => {
-    setIsPurchaseModalOpen(true);
+  const [tonConnectUI] = useTonConnectUI();
+  const tonWallet = useTonWallet();
+
+  const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
+
+  const { lastMessage, readyState } = useWebSocket(
+    websocketUrl
+  );
+
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: "Connecting",
+    [ReadyState.OPEN]: "Open",
+    [ReadyState.CLOSING]: "Closing",
+    [ReadyState.CLOSED]: "Closed",
+    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+  }[readyState];
+
+  useEffect(() => {
+    if (lastMessage) {
+      const data = JSON.parse(lastMessage.data);
+      switch (data.type) {
+        case "pool_update": {
+          setTestD(+data.total_pool);
+          break;
+        };
+        case "raffle_ended": {
+          // const { winners, total_pool } = data as { winners: {user_id: string, amount: number}[], total_pool: number };
+          // if (winners.length > 0) {
+          //   dispatch(toggleModal({ key: MODALS.YOU_WON, value: { winners, total_pool } }));
+          // }
+          setTestD(0);
+          dispatch(toggleModal({ key: MODALS.YOU_LOST, value: false }));
+          break;
+        }
+      }
+    }
+  }, [lastMessage, dispatch]);  
+
+  console.log("status", connectionStatus, lastMessage);
+
+  const initBuyTickets = () => {
+    if (user) {
+      dispatch(
+        toggleModal({
+          key: user.ton_public_key
+            ? MODALS.BUY_TICKET
+            : MODALS.WALLET_NOT_CONNECTED,
+          value: true,
+        })
+      );
+    }
+  };
+
+  const [purchaseTicketsMut] = usePurchaseTicketsMutation();
+
+  const purchaseTickets = async (amount: number) => {
+    const ADDRESS = "UQDn5NpxXKx7nPQbv-gewyYS2DdS6MtB6bE6HL2sM32IjVoF";
+    const ONE_TICKET_COST = 450;
+
+    const amountToBuy = amount * ONE_TICKET_COST + "00000";
+    await tonConnectUI
+      .sendTransaction({
+        network: CHAIN.MAINNET,
+        validUntil: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
+        messages: [
+          {
+            address: ADDRESS,
+            amount: amountToBuy,
+          },
+        ],
+      })
+      .then((res) => {
+        // console.log("BOC", res);
+        // alert(res.boc);
+        purchaseTicketsMut({
+          boc: res.boc,
+          amount: amountToBuy,
+          address: tonWallet!.account.address,
+          telegramId: user!.telegram_id,
+        })
+          .unwrap()
+          .then((resp) => {
+            // alert(resp.message);
+            // alert(JSON.stringify(resp.data));
+            console.log(resp);
+            dispatch(
+              toggleModal([
+                {
+                  key: MODALS.PURCHASE_LOADING,
+                  value: false,
+                },
+                {
+                  key: MODALS.PURCHASE_SUCCESS,
+                  value: true,
+                },
+              ])
+            );
+          })
+          .catch(() => {
+            dispatch(
+              toggleModal([
+                {
+                  key: MODALS.PURCHASE_LOADING,
+                  value: false,
+                },
+                {
+                  key: MODALS.ERROR,
+                  value: true,
+                },
+              ])
+            );
+          });
+      })
+      .catch(() => {
+        toggleModal([
+          {
+            key: MODALS.PURCHASE_LOADING,
+            value: false,
+          },
+          {
+            key: MODALS.ERROR,
+            value: true,
+          },
+        ]);
+      });
   };
 
   return (
     <section className={"pt-16"}>
-      <Dialog
-        open={isPurchaseModalOpen}
-        onOpenChange={(v) => setIsPurchaseModalOpen(v)}
-      >
-        <DialogTrigger>Open</DialogTrigger>
-        <DialogContent>
-          
-        </DialogContent>
-      </Dialog>
+      <BuyTicketsModal onPurchase={purchaseTickets} />
+      <WalletNotConnectedModal />
+      <LoadingPurchaseModal />
       <div className="container">
         {/* PRIZE POOL */}
         <h1 className="text-xl text-center uppercase mb-4">prize pool:</h1>
 
         <div className="relative flex justify-center">
-          <AmountShowcase defaultAmount={testD} />
+          {/* <AmountShowcase defaultAmount={testD} /> */}
+          <p className="text-center text-2xl uppercase">{testD}</p>
         </div>
 
         {/* TIME REMAINING */}
@@ -65,7 +187,7 @@ const MainGame: FC = () => {
 
         {/* BUY TICKETS */}
         <div className="grid px-3.5 grid-cols-2 mt-14 justify-center items-center gap-4">
-          <Button onClick={() => initializePurchase()}>Buy Ticket</Button>
+          <Button onClick={initBuyTickets}>Buy Ticket</Button>
           <Button
             variant={"ghost"}
             onClick={() => {

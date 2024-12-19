@@ -21,7 +21,7 @@ export const walletApi = api.injectEndpoints({
           tonPublicKey,
         },
       }),
-      invalidatesTags: ["Wallet"],
+      invalidatesTags: ["Wallet", "User"],
     }),
     purchaseTickets: build.mutation<
       ApiResponse<User>,

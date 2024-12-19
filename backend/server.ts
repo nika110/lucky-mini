@@ -56,7 +56,7 @@ class Server {
         });
         console.log("USEqwewqewqeR:", user);
         console.log("USERweeer ID:", user?.telegram_id);
-        console.log("USERS:", collection.find({}));
+        // console.log("USERS:", collection.find({}));
       } catch (error) {
         console.log("errrrrror user");
       }
@@ -67,10 +67,11 @@ class Server {
         .toArray();
       const collectionNames = collections.map((col) => col.name);
 
+      console.log("Collections:", collectionNames);
       const requiredCollections = [
         "users",
         "raffles",
-        "tickets"
+        // "tickets"
       ];
       const missingCollections = requiredCollections.filter(
         (name) => !collectionNames.includes(name)
@@ -93,7 +94,11 @@ class Server {
   private async validateMongoConnection(): Promise<boolean> {
     try {
       const models = mongoose.modelNames();
-      const requiredModels = ["User", "Raffle", "Ticket"];
+      const requiredModels = [
+        "User",
+        "Raffle",
+        // "Ticket"
+      ];
       const missingModels = requiredModels.filter(
         (model) => !models.includes(model)
       );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { ROUTES } from "@/routes/routes";
 import { motion } from "framer-motion";
+import WebApp from "@twa-dev/sdk";
 
 // Расширенный интерфейс для Telegram WebApp
 declare global {
@@ -79,45 +80,45 @@ declare global {
 
 export const Layout: React.FC = () => {
   const location = useLocation();
-  const tg = window.Telegram.WebApp;
-  const [viewportHeight, setViewportHeight] = useState(tg.viewportHeight);
+  const [viewportHeight, setViewportHeight] = useState(WebApp.viewportHeight);
 
   useEffect(() => {
-    // Инициализация Web App
-    tg.ready();
-    tg.expand();
+    WebApp.ready();
+    WebApp.expand();
+
+    WebApp.setBackgroundColor("#121212");
+    WebApp.setBottomBarColor("#121212");
+    WebApp.setHeaderColor("#121212");
 
     // Обработчик изменения высоты вьюпорта
     const handleViewportChange = () => {
-      setViewportHeight(tg.viewportHeight);
+      setViewportHeight(WebApp.viewportHeight);
     };
 
     // Обработчик изменения темы
 
     // Настройка кнопки "Назад"
     if (location.pathname === ROUTES.HOME) {
-      tg.BackButton.hide();
+      WebApp.BackButton.hide();
     } else {
-      tg.BackButton.show();
-      tg.BackButton.onClick(() => {
+      WebApp.BackButton.show();
+      WebApp.BackButton.onClick(() => {
         window.history.back();
       });
     }
 
     // Подписка на события Telegram WebApp
-    tg.onEvent("viewportChanged", handleViewportChange);
+    WebApp.onEvent("viewportChanged", handleViewportChange);
 
     // Очистка при размонтировании
     return () => {
-      tg.offEvent("viewportChanged", handleViewportChange);
+      WebApp.offEvent("viewportChanged", handleViewportChange);
     };
-  }, [location.pathname, tg]);
+  }, [location.pathname]);
 
   // Применяем динамические стили на основе темы Telegram
   const containerStyle = {
     minHeight: `${viewportHeight}px`,
-    backgroundColor: tg.backgroundColor,
-    color: tg.themeParams.text_color,
   };
 
   return (
