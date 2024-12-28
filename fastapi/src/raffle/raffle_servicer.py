@@ -1,5 +1,6 @@
 import grpc.aio
 from . import raffle_pb2, raffle_pb2_grpc
+from .raffle_31_service import Raffle31Service
 from .raffle_service import RaffleService
 import logging
 from users.user_repo import UserRepository
@@ -16,6 +17,8 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
         self.raffle_service = RaffleService()
         self.balance_service = BalanceService()
         self.user_service = UserRepository()
+        self.raffle_31_service = Raffle31Service
+
 
     async def PurchaseTickets(
         self,
@@ -38,37 +41,59 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             #     return raffle_pb2.PurchaseTicketsResponse()
 
             # Purchase tickets
-            ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
-                request.user_id,
-                request.ticket_count
-            )
 
-            # Update balance
-            # await self.balance_service.update_user_balance(
-            #     request.user_id,
-            #     -request.ticket_count
-            # )
+            if request.game_type == "lucky_31":
+                ticket_numbers, raffle_id = self.raffle_31_service.purchase_tickets(user_id=request.user_id, ticket_count=request.ticket_count, to_number=request.to_number)
 
-            # Handle referral
-            check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
-            if check_if_user_has_referrer.referred_by:
-                referrer = await self.user_service.get_user_by_telegram_id(
-                    check_if_user_has_referrer.referred_by
-                )
-                await self.user_service.update_user_xp(
-                    referrer.id,
-                    (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
-                )
+                check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
+                if check_if_user_has_referrer.referred_by:
+                    referrer = await self.user_service.get_user_by_telegram_id(
+                        check_if_user_has_referrer.referred_by
+                    )
+                    await self.user_service.update_user_xp(
+                        referrer.id,
+                        (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                    )
 
-                await self.user_service.update_user_xp(
+                    await self.user_service.update_user_xp(
+                        request.user_id,
+                        (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                    )
+
+
+
+            elif request.game_type == "lucky_raffle":
+                ticket_numbers, raffle_id = await self.raffle_service.purchase_tickets(
                     request.user_id,
-                    (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                    request.ticket_count
                 )
 
-            # Return successful response
+                # Update balance
+                # await self.balance_service.update_user_balance(
+                #     request.user_id,
+                #     -request.ticket_count
+                # )
+
+                # Handle referral
+                check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
+                if check_if_user_has_referrer.referred_by:
+                    referrer = await self.user_service.get_user_by_telegram_id(
+                        check_if_user_has_referrer.referred_by
+                    )
+                    await self.user_service.update_user_xp(
+                        referrer.id,
+                        (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                    )
+
+                    await self.user_service.update_user_xp(
+                        request.user_id,
+                        (request.ticket_count * settings.REFERRAL_UPDATE_PER_TICKET_BUY)
+                    )
+
+                # Return successful response
             return raffle_pb2.PurchaseTicketsResponse(
-                ticket_numbers=ticket_numbers,
-                raffle_id=raffle_id
+                    ticket_numbers=ticket_numbers,
+                    raffle_id=raffle_id
             )
 
         except Exception as e:

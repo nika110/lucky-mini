@@ -6,6 +6,7 @@ import websockets
 import logging
 
 from database import Database
+from raffle.raffle_31_service import Raffle31Service
 from users import auth_pb2_grpc
 from users.auth_servicer import AuthServicer
 from raffle.raffle_servicer import RaffleServicer
@@ -32,8 +33,11 @@ async def init_db():
 
 async def ensure_active_raffle():
     raffle_service = RaffleService()
+    raffle_31_service = Raffle31Service()
     new_raffle = await raffle_service._create_new_raffle()
+    new_31_raffle = await raffle_31_service._create_new_31_raffle()
     logger.info(f"Created new raffle: {new_raffle.id}, ends at {new_raffle.end_time}")
+    logger.info(f"Created new raffle 31: {new_31_raffle.id}, ends at {new_31_raffle.end_time}")
 
 async def serve():
     await init_db()

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 
 class Winner(BaseModel):
@@ -21,8 +21,23 @@ class Ticket(BaseModel):
     user_id: str
     purchase_time: datetime
 
+class NumberWinner(BaseModel):
+    user_id: str
+    amount: float
 
-    #status: "won"| "lost" | "pending" = "pending"
+class NumberRaffle(BaseModel):
+    id: str
+    start_time: datetime
+    end_time: datetime
+    number_pools: Dict[str, float] = None
+    winners: Optional[List[NumberWinner]] = None
+    is_active: bool = True
+
+class NumberBet(BaseModel):
+    user_id:str
+    raffle_id: str
+    number: int
+    amount: float
 
 
 # class Wallet(BaseModel):

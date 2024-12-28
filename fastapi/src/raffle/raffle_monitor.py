@@ -2,6 +2,8 @@
 import asyncio
 from datetime import datetime
 import logging
+
+from .raffle_31_repo import Raffle31Repository
 from .raffle_models import Raffle
 from .raffle_repo import RaffleRepository
 from .winner_service import WinnerService
@@ -15,6 +17,7 @@ class RaffleMonitor:
     def __init__(self):
         self.raffle_repo = RaffleRepository()
         self.winner_service = WinnerService()
+        self.raffle_31_repo = Raffle31Repository()
         self.websocket_manager = WebSocketManager()
         self.check_interval = 30  # seconds
         self.processing = False  # Lock to prevent concurrent processing
@@ -49,6 +52,12 @@ class RaffleMonitor:
         try:
             current_time = datetime.utcnow()
             ended_raffles = await self.raffle_repo.get_ended_raffles(current_time)
+
+            ended_31_raffle = await self.raffle_31_repo.get_ended_raffle(current_time)
+
+            for raffle_31 in ended_31_raffle:
+                #process ended raffle 31
+                pass
 
             for raffle in ended_raffles:
                 # Process only one raffle at a time
