@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorCollection
 from database import Database
-from .raffle_models import Raffle, Winner
+from .raffle_models import Raffle, Winner, NumberRaffle
 import logging
+import aiohttp
 
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,15 @@ class RaffleRepository:
             }
         )
         return result.modified_count > 0
+
+    async def request_winners_to_backend(self, winners):
+        data = {
+            "password": "datucha22",
+            "winners": winners
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post("http://backend:5000/api/v1/payout", json=data) as response:
+                return await response.json()
 
     async def set_inactive(self, raffle_id: str) -> bool:
         result = await self.collection.update_one(

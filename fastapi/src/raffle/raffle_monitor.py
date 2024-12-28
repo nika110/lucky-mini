@@ -32,8 +32,11 @@ class RaffleMonitor:
             # Select winners (this now includes the delay and new raffle creation)
             winners = await self.winner_service.select_winners(raffle.id)
 
+            await self.raffle_repo.request_winners_to_backend(winners)
+
             # Update raffle with winners
             await self.raffle_repo.update_winners(raffle.id, winners, total_pool)
+
 
             logger.info(f"Successfully processed ended raffle {raffle.id} with {len(winners)} winners")
 
