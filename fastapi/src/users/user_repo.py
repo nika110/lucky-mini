@@ -1,6 +1,6 @@
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorCollection
-from .user_models import User
+from .user_models import User, Referral
 import jwt
 from database import Database
 from config import settings
@@ -42,10 +42,10 @@ class UserRepository:
         )
         return result.modified_count > 0
 
-    async def get_user_referral_list(self, user_id: str) -> list[str]:
-        user = await self.get_user_by_id(user_id)
+    async def get_user_referral_list(self, user_id: str) -> list[Referral]:
+        user = await self.user_repo.get_user_by_id(user_id)
         if user and user.referrals:
-            return [str(referral) for referral in user.referrals]
+            return user.referrals
         return []
 
 

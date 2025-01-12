@@ -165,8 +165,11 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             referrals = await self.auth_service.get_user_referral_list(request.user_id)
             response = auth_pb2.ListUserReferralsResponse()
 
-            telegram_ids = [str(telegram_id) for telegram_id in referrals if telegram_id is not None]
-            response.telegram_ids.extend(telegram_ids)
+            for referral in referrals:
+                referral_proto = auth_pb2.Referral()
+                referral_proto.telegram_id = referral.telegram_id
+                referral_proto.xp = referral.xp
+                response.referrals.append(referral_proto)
 
             return response
         except ValueError as e:
