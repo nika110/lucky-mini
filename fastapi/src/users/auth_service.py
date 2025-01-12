@@ -6,7 +6,7 @@ import jwt
 from datetime import datetime, timedelta
 import uuid
 from typing import Optional, Tuple, Dict
-from .user_models import User
+from .user_models import User, Referral
 from .user_repo import UserRepository
 from config import settings
 import hmac
@@ -78,6 +78,7 @@ class AuthService:
         except Exception as e:
             logger.error(f"Verification error: {str(e)}")
             return None
+
     async def authenticate_telegram(
             self,
             telegram_id: str,
@@ -85,8 +86,9 @@ class AuthService:
             referred_by: Optional[str] = None
     ) -> Tuple[User, str]:
 
+        referred_by_user = None
         if referred_by:
-            referred_by_user = await self.user_repo.get_user_by_telegram_id(referred_by) if referred_by else None
+            referred_by_user = await self.user_repo.get_user_by_telegram_id(referred_by)
             if not referred_by_user:
                 raise ValueError("Invalid referral user")
 
@@ -109,9 +111,17 @@ class AuthService:
                 created_at=datetime.utcnow(),
                 xp=0,
                 referred_by=referred_by,
-                referrals=[] #STORE TG_ID
+                referrals=[]
             )
             await self.user_repo.create_user(user)
+
+            # If this is a new user and they were referred, add them to referrer's referrals
+            if referred_by_user:
+                new_referral = Referral(telegram_id=telegram_id, xp=0)
+                if referred_by_user.referrals is None:
+                    referred_by_user.referrals = []
+                referred_by_user.referrals.append(new_referral)
+                await self.user_repo.update_user(referred_by_user)
 
         token = self.create_token(user)
 
