@@ -64,6 +64,11 @@ class AuthServiceStub(object):
                 request_serializer=auth__pb2.GetConfigRequest.SerializeToString,
                 response_deserializer=auth__pb2.GetConfigResponse.FromString,
                 _registered_method=True)
+        self.IncreaseXp = channel.unary_unary(
+                '/auth.AuthService/IncreaseXp',
+                request_serializer=auth__pb2.IncreaseXpRequest.SerializeToString,
+                response_deserializer=auth__pb2.IncreaseXpResponse.FromString,
+                _registered_method=True)
 
 
 class AuthServiceServicer(object):
@@ -108,6 +113,12 @@ class AuthServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def IncreaseXp(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_AuthServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -140,6 +151,11 @@ def add_AuthServiceServicer_to_server(servicer, server):
                     servicer.GetConfig,
                     request_deserializer=auth__pb2.GetConfigRequest.FromString,
                     response_serializer=auth__pb2.GetConfigResponse.SerializeToString,
+            ),
+            'IncreaseXp': grpc.unary_unary_rpc_method_handler(
+                    servicer.IncreaseXp,
+                    request_deserializer=auth__pb2.IncreaseXpRequest.FromString,
+                    response_serializer=auth__pb2.IncreaseXpResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -304,6 +320,33 @@ class AuthService(object):
             '/auth.AuthService/GetConfig',
             auth__pb2.GetConfigRequest.SerializeToString,
             auth__pb2.GetConfigResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def IncreaseXp(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/auth.AuthService/IncreaseXp',
+            auth__pb2.IncreaseXpRequest.SerializeToString,
+            auth__pb2.IncreaseXpResponse.FromString,
             options,
             channel_credentials,
             insecure,

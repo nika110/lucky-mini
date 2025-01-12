@@ -186,4 +186,12 @@ class AuthService:
     async def get_user_referral_list(self, user_id: str) -> list:
         return await self.user_repo.get_user_referral_list(user_id)
 
+    async def increase_user_xp(self, user_id: str, xp: int):
+        user = await self.user_repo.get_user_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+        user.xp += xp
+        await self.user_repo.update_user(user)
+        return user
+
 

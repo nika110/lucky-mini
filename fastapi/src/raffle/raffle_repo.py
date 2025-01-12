@@ -38,7 +38,7 @@ class RaffleRepository:
 
     async def request_winners_to_backend(self, winners):
         data = {
-            "password": "datucha22",
+            "password": "DatuchaWinner2025Today",
             "winners": winners
         }
         async with aiohttp.ClientSession() as session:

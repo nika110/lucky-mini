@@ -181,3 +181,10 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             return response
         except Exception as e:
             await context.abort(grpc.StatusCode.INTERNAL, str(e))
+
+    async def IncreaseXp(self, request, context):
+        await self.auth_service.increase_user_xp(
+            user_id=request.user_id,
+            xp=request.xp
+        )
+        return auth_pb2.IncreaseXpResponse(message="XP increased")

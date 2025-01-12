@@ -25,37 +25,41 @@ _sym_db = _symbol_database.Default()
 from . import user_pb2 as user__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x04\x61uth\x1a\nuser.proto\"\x12\n\x10GetConfigRequest\")\n\x11GetConfigResponse\x12\x14\n\x0cticket_price\x18\x01 \x01(\t\"+\n\x18ListUserReferralsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\"1\n\x19ListUserReferralsResponse\x12\x14\n\x0ctelegram_ids\x18\x01 \x03(\t\"A\n\x19UpdateUserReferralRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x13\n\x0breferred_by\x18\x02 \x01(\t\"=\n\x1aUpdateUserReferralResponse\x12\x1f\n\x04user\x18\x01 \x01(\x0b\x32\x11.user.UserProfile\"p\n\x13\x41uthTelegramRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x18\n\x0breferred_by\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x1a\n\x12telegram_auth_code\x18\x03 \x01(\tB\x0e\n\x0c_referred_by\"F\n\x14\x41uthTelegramResponse\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile\"E\n\x16UpdateTonWalletRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x16\n\x0eton_public_key\x18\x02 \x01(\t\":\n\x17UpdateTonWalletResponse\x12\x1f\n\x04user\x18\x01 \x01(\x0b\x32\x11.user.UserProfile\"%\n\x14ValidateTokenRequest\x12\r\n\x05token\x18\x01 \x01(\t\"i\n\x15ValidateTokenResponse\x12\x10\n\x08is_valid\x18\x01 \x01(\x08\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile\x12\x1d\n\x07tickets\x18\x03 \x03(\x0b\x32\x0c.user.Ticket2\xe3\x03\n\x0b\x41uthService\x12M\n\x14\x41uthenticateTelegram\x12\x19.auth.AuthTelegramRequest\x1a\x1a.auth.AuthTelegramResponse\x12N\n\x0fUpdateTonWallet\x12\x1c.auth.UpdateTonWalletRequest\x1a\x1d.auth.UpdateTonWalletResponse\x12H\n\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x12W\n\x12UpdateUserReferral\x12\x1f.auth.UpdateUserReferralRequest\x1a .auth.UpdateUserReferralResponse\x12T\n\x11ListUserReferrals\x12\x1e.auth.ListUserReferralsRequest\x1a\x1f.auth.ListUserReferralsResponse\x12<\n\tGetConfig\x12\x16.auth.GetConfigRequest\x1a\x17.auth.GetConfigResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x04\x61uth\x1a\nuser.proto\"0\n\x11IncreaseXpRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\n\n\x02xp\x18\x02 \x01(\x05\"%\n\x12IncreaseXpResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\"\x12\n\x10GetConfigRequest\")\n\x11GetConfigResponse\x12\x14\n\x0cticket_price\x18\x01 \x01(\t\"+\n\x18ListUserReferralsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\"1\n\x19ListUserReferralsResponse\x12\x14\n\x0ctelegram_ids\x18\x01 \x03(\t\"A\n\x19UpdateUserReferralRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x13\n\x0breferred_by\x18\x02 \x01(\t\"=\n\x1aUpdateUserReferralResponse\x12\x1f\n\x04user\x18\x01 \x01(\x0b\x32\x11.user.UserProfile\"p\n\x13\x41uthTelegramRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x18\n\x0breferred_by\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x1a\n\x12telegram_auth_code\x18\x03 \x01(\tB\x0e\n\x0c_referred_by\"F\n\x14\x41uthTelegramResponse\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile\"E\n\x16UpdateTonWalletRequest\x12\x13\n\x0btelegram_id\x18\x01 \x01(\t\x12\x16\n\x0eton_public_key\x18\x02 \x01(\t\":\n\x17UpdateTonWalletResponse\x12\x1f\n\x04user\x18\x01 \x01(\x0b\x32\x11.user.UserProfile\"%\n\x14ValidateTokenRequest\x12\r\n\x05token\x18\x01 \x01(\t\"i\n\x15ValidateTokenResponse\x12\x10\n\x08is_valid\x18\x01 \x01(\x08\x12\x1f\n\x04user\x18\x02 \x01(\x0b\x32\x11.user.UserProfile\x12\x1d\n\x07tickets\x18\x03 \x03(\x0b\x32\x0c.user.Ticket2\xa4\x04\n\x0b\x41uthService\x12M\n\x14\x41uthenticateTelegram\x12\x19.auth.AuthTelegramRequest\x1a\x1a.auth.AuthTelegramResponse\x12N\n\x0fUpdateTonWallet\x12\x1c.auth.UpdateTonWalletRequest\x1a\x1d.auth.UpdateTonWalletResponse\x12H\n\rValidateToken\x12\x1a.auth.ValidateTokenRequest\x1a\x1b.auth.ValidateTokenResponse\x12W\n\x12UpdateUserReferral\x12\x1f.auth.UpdateUserReferralRequest\x1a .auth.UpdateUserReferralResponse\x12T\n\x11ListUserReferrals\x12\x1e.auth.ListUserReferralsRequest\x1a\x1f.auth.ListUserReferralsResponse\x12<\n\tGetConfig\x12\x16.auth.GetConfigRequest\x1a\x17.auth.GetConfigResponse\x12?\n\nIncreaseXp\x12\x17.auth.IncreaseXpRequest\x1a\x18.auth.IncreaseXpResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'auth_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_GETCONFIGREQUEST']._serialized_start=32
-  _globals['_GETCONFIGREQUEST']._serialized_end=50
-  _globals['_GETCONFIGRESPONSE']._serialized_start=52
-  _globals['_GETCONFIGRESPONSE']._serialized_end=93
-  _globals['_LISTUSERREFERRALSREQUEST']._serialized_start=95
-  _globals['_LISTUSERREFERRALSREQUEST']._serialized_end=138
-  _globals['_LISTUSERREFERRALSRESPONSE']._serialized_start=140
-  _globals['_LISTUSERREFERRALSRESPONSE']._serialized_end=189
-  _globals['_UPDATEUSERREFERRALREQUEST']._serialized_start=191
-  _globals['_UPDATEUSERREFERRALREQUEST']._serialized_end=256
-  _globals['_UPDATEUSERREFERRALRESPONSE']._serialized_start=258
-  _globals['_UPDATEUSERREFERRALRESPONSE']._serialized_end=319
-  _globals['_AUTHTELEGRAMREQUEST']._serialized_start=321
-  _globals['_AUTHTELEGRAMREQUEST']._serialized_end=433
-  _globals['_AUTHTELEGRAMRESPONSE']._serialized_start=435
-  _globals['_AUTHTELEGRAMRESPONSE']._serialized_end=505
-  _globals['_UPDATETONWALLETREQUEST']._serialized_start=507
-  _globals['_UPDATETONWALLETREQUEST']._serialized_end=576
-  _globals['_UPDATETONWALLETRESPONSE']._serialized_start=578
-  _globals['_UPDATETONWALLETRESPONSE']._serialized_end=636
-  _globals['_VALIDATETOKENREQUEST']._serialized_start=638
-  _globals['_VALIDATETOKENREQUEST']._serialized_end=675
-  _globals['_VALIDATETOKENRESPONSE']._serialized_start=677
-  _globals['_VALIDATETOKENRESPONSE']._serialized_end=782
-  _globals['_AUTHSERVICE']._serialized_start=785
-  _globals['_AUTHSERVICE']._serialized_end=1268
+  _globals['_INCREASEXPREQUEST']._serialized_start=32
+  _globals['_INCREASEXPREQUEST']._serialized_end=80
+  _globals['_INCREASEXPRESPONSE']._serialized_start=82
+  _globals['_INCREASEXPRESPONSE']._serialized_end=119
+  _globals['_GETCONFIGREQUEST']._serialized_start=121
+  _globals['_GETCONFIGREQUEST']._serialized_end=139
+  _globals['_GETCONFIGRESPONSE']._serialized_start=141
+  _globals['_GETCONFIGRESPONSE']._serialized_end=182
+  _globals['_LISTUSERREFERRALSREQUEST']._serialized_start=184
+  _globals['_LISTUSERREFERRALSREQUEST']._serialized_end=227
+  _globals['_LISTUSERREFERRALSRESPONSE']._serialized_start=229
+  _globals['_LISTUSERREFERRALSRESPONSE']._serialized_end=278
+  _globals['_UPDATEUSERREFERRALREQUEST']._serialized_start=280
+  _globals['_UPDATEUSERREFERRALREQUEST']._serialized_end=345
+  _globals['_UPDATEUSERREFERRALRESPONSE']._serialized_start=347
+  _globals['_UPDATEUSERREFERRALRESPONSE']._serialized_end=408
+  _globals['_AUTHTELEGRAMREQUEST']._serialized_start=410
+  _globals['_AUTHTELEGRAMREQUEST']._serialized_end=522
+  _globals['_AUTHTELEGRAMRESPONSE']._serialized_start=524
+  _globals['_AUTHTELEGRAMRESPONSE']._serialized_end=594
+  _globals['_UPDATETONWALLETREQUEST']._serialized_start=596
+  _globals['_UPDATETONWALLETREQUEST']._serialized_end=665
+  _globals['_UPDATETONWALLETRESPONSE']._serialized_start=667
+  _globals['_UPDATETONWALLETRESPONSE']._serialized_end=725
+  _globals['_VALIDATETOKENREQUEST']._serialized_start=727
+  _globals['_VALIDATETOKENREQUEST']._serialized_end=764
+  _globals['_VALIDATETOKENRESPONSE']._serialized_start=766
+  _globals['_VALIDATETOKENRESPONSE']._serialized_end=871
+  _globals['_AUTHSERVICE']._serialized_start=874
+  _globals['_AUTHSERVICE']._serialized_end=1422
 # @@protoc_insertion_point(module_scope)
