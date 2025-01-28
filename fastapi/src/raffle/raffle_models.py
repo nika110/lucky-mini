@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class Winner(BaseModel):
     user_id: str
@@ -29,7 +29,7 @@ class NumberRaffle(BaseModel):
     id: str
     start_time: datetime
     end_time: datetime
-    number_pools: Dict[str, float] = None
+    number_pools: Dict[str, float] = Field(default_factory=dict)
     winners: Optional[List[NumberWinner]] = None
     is_active: bool = True
 
