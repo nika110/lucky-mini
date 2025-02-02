@@ -79,11 +79,21 @@ export class TonTransactionService {
 
     for (let i = 0; i < options.retries; i++) {
       try {
-        return await fn();
+        console.log(`Starting retry attempt ${i + 1}`);
+        const result = await fn().catch((error) => {
+          console.error(`Error in retry attempt ${i + 1}:`, error);
+          throw error;
+        });
+        console.log(`Retry attempt ${i + 1} succeeded`);
+        return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
+        console.log(
+          `Retry attempt ${i + 1} failed, waiting ${
+            options.delay
+          }ms before next attempt`
+        );
         await new Promise((resolve) => setTimeout(resolve, options.delay));
-        console.log(`Retry attempt ${i + 1}/${options.retries}`);
       }
     }
 
@@ -103,10 +113,26 @@ export class TonTransactionService {
     bocString: string,
     attempt: number
   ): Promise<TransactionValidationResult> {
-    console.log(`Search attempt ${attempt + 1}, getting fresh transactions...`);
-    const transactions = await this.client.getTransactions(parsedAddress, {
-      limit: 10, // Увеличили лимит для большей уверенности
-    });
+    console.log(`Search attempt ${attempt + 1} started`);
+    let transactions;
+    try {
+      transactions = await this.client.getTransactions(parsedAddress, {
+        limit: 10,
+      });
+      console.log("Raw response from getTransactions:", transactions);
+    } catch (error) {
+      console.error("Failed to get transactions:", error);
+      throw new TonTransactionError(
+        "Failed to fetch transactions",
+        TonErrorCodes.TRANSACTION_NOT_FOUND,
+        error
+      );
+    }
+    console.log(
+      `Search attempt ${attempt + 1} received ${
+        transactions.length
+      } transactions`
+    );
 
     for (const tx of transactions) {
       const inMsg = tx.inMessage;
@@ -160,9 +186,9 @@ export class TonTransactionService {
     try {
       const parsedAddress = Address.parse(destinationAddress);
       const searchAttempts = 5;
-      const searchDelay = 5000;
-      const maxRetries = 2;
-      const retryDelay = 5000;
+      const searchDelay = 15000;
+      const maxRetries = 3;
+      const retryDelay = 15000;
 
       for (let attempt = 0; attempt < searchAttempts; attempt++) {
         try {

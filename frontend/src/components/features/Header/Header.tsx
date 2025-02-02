@@ -41,7 +41,6 @@ const Header: FC<HeaderProps> = ({ user }) => {
   //     alert((walletData as SolanaWalletData).signature);
   //   }
   // }
-
   return (
     <header className={"pt-8"}>
       <div className="container flex justify-between items-center">
@@ -51,7 +50,10 @@ const Header: FC<HeaderProps> = ({ user }) => {
         {user ? (
           <HeaderProfile user={user} />
         ) : (
-          <Skeleton className="w-[150px] h-9" />
+          <div className="flex justify-end items-center gap-2">
+            <Skeleton className="w-12 h-[30px]" />
+            <Skeleton className="w-10 h-10" />
+          </div>
         )}
       </div>
     </header>

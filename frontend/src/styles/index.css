@@ -121,3 +121,9 @@ body::-webkit-scrollbar {
 .transform-style-preserve-3d {
   transform-style: preserve-3d;
 }
+
+
+:where([data-sonner-toast]) :where([data-icon]) {
+  width: 32px !important;
+  height: 32px !important;
+}

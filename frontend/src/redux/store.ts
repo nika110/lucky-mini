@@ -5,11 +5,13 @@ import { api } from "./services/api";
 import { modalsSlice } from "./features/modals.reducer";
 import type { TypedUseSelectorHook } from "react-redux";
 import { useDispatch, useSelector } from "react-redux";
+import { statsSlice } from "./features/stats.reducer";
 
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
     [modalsSlice.name]: modalsSlice.reducer,
+    [statsSlice.name]: statsSlice.reducer,
   },
   middleware: (getDefault) =>
     getDefault().concat(api.middleware).concat(rtkQueryErrorLogger),

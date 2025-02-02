@@ -20,6 +20,7 @@ enum ROUTES {
   // RAFFLES
   GET_CURRENT_RAFFLE = "/:telegramId/current-raffle",
   PURCHASE_TICKETS = "/:telegramId/purchase-tickets",
+  INCREASE_XP = "/:telegramId/increase-xp",
   // OTHERS
   // GET_REFERRALS = "/:telegramId/referrals",
   // DELETE_WALLET = "/:telegramId/delete-wallet",
@@ -84,6 +85,17 @@ router.post(ROUTES.INIT, (req, res) => {
   return userController.initUser(req, res);
 });
 router.get(ROUTES.GET_USER, validateGetUser, UserController.getUser);
+
+router.post(ROUTES.INCREASE_XP, (req, res) => {
+  if (!userController) {
+    return res.status(503).json({
+      success: false,
+      message: "Service is initializing - userController",
+      data: null,
+    });
+  }
+  return userController.increaseXp(req, res);
+});
 
 // ______
 // WALLET

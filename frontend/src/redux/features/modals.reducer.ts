@@ -9,6 +9,10 @@ export enum MODALS {
   WALLET_NOT_CONNECTED = "WALLET_NOT_CONNECTED",
   WON_RAFFLE = "WON_RAFFLE",
   YOU_LOST = "YOU_LOST",
+  FINISH_LUCKY_TAP = "FINISH_LUCKY_TAP",
+  RULES_LUCKY_TAP = "RULES_LUCKY_TAP",
+  INFO_LUCKY_31 = "INFO_LUCKY_31",
+  SOON = "SOON",
 }
 
 // Define a type for the slice state
@@ -22,7 +26,11 @@ const initialState: ModalsState = {
   [MODALS.PURCHASE_LOADING]: false,
   [MODALS.WALLET_NOT_CONNECTED]: false,
   [MODALS.WON_RAFFLE]: false,
-  [MODALS.YOU_LOST]: false
+  [MODALS.YOU_LOST]: false,
+  [MODALS.FINISH_LUCKY_TAP]: false,
+  [MODALS.RULES_LUCKY_TAP]: true,
+  [MODALS.INFO_LUCKY_31]: false,
+  [MODALS.SOON]: false,
 };
 
 export const modalsSlice = createSlice({

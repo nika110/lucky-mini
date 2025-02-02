@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import { Dialog, DialogContent } from "@/components/shared/UI/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/shared/UI/dialog";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { MODALS, toggleModal } from "@/redux/features/modals.reducer";
 import { Button } from "@/components/shared/UI/button";
@@ -9,6 +9,7 @@ import { Input } from "../UI/input";
 interface BuyTicketsProps {
   onPurchase: (a: number) => void;
 }
+
 const BuyTicketsModal: FC<BuyTicketsProps> = ({ onPurchase }) => {
   const MODAL_KEY = MODALS.BUY_TICKET;
   const dispatch = useAppDispatch();
@@ -39,6 +40,7 @@ const BuyTicketsModal: FC<BuyTicketsProps> = ({ onPurchase }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(v) => onOpenChange(v)}>
       <DialogContent className="px-5">
+        <DialogTitle className="hidden">Buy Tickets</DialogTitle>
         <h2 className="uppercase text-center mb-7 mt-3">rEADY TO buy?</h2>
 
         <div className="flex justify-center items-center gap-1 mb-7">

@@ -24,6 +24,10 @@ interface UpdateTonWalletReqApi {
   tonPublicKey: string;
 }
 
+interface IncreaseXpReqApi {
+  xp: number;
+}
+
 export class UserController {
   private static instance: UserController | null = null;
   private grpcManager: GrpcManager;
@@ -148,17 +152,17 @@ export class UserController {
       const { telegramId, initData, referralCode }: IUserRegistration =
         req.body;
 
-      try {
-        // Get gRPC client and check if it's ready
-        const authClient = this.grpcManager.getAuthClient();
-        if (!authClient.isReady()) {
-          return res.status(503).json({
-            success: false,
-            message: "Auth service temporarily unavailable",
-            data: null,
-          });
-        }
+      // Get gRPC client and check if it's ready
+      const authClient = this.grpcManager.getAuthClient();
+      if (!authClient.isReady()) {
+        return res.status(503).json({
+          success: false,
+          message: "Auth service temporarily unavailable",
+          data: null,
+        });
+      }
 
+      try {
         // Call gRPC authenticate method
         const authResponse = await authClient.authenticateTelegram(
           telegramId.toString(),
@@ -172,7 +176,19 @@ export class UserController {
           message: "User created successfully",
         });
       } catch (error: any) {
-        console.error("Error in initData:", {
+        // Handle gRPC specific errors
+        if (error.code === 6) {
+          // ALREADY_EXISTS in gRPC
+          // If user already exists, return success with existing data
+          return res.status(200).json({
+            success: true,
+            data: error.metadata?.existingUser || null,
+            message: "User already exists",
+          });
+        }
+
+        // Log the error but don't let it crash the server
+        console.error("gRPC Error in initUser:", {
           errorMessage: error.message,
           stack: error.stack,
           code: error.code,
@@ -186,13 +202,20 @@ export class UserController {
           });
         }
 
+        // Return error response but keep server running
         return res.status(500).json({
           success: false,
-          message: "Internal server error while fetching current raffle",
+          message: "Internal server error while initializing user",
           data: null,
         });
       }
-    } catch (error) {}
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Unexpected error occurred",
+        data: null,
+      });
+    }
   }
 
   public async getReferralList(
@@ -374,6 +397,73 @@ export class UserController {
         success: false,
         message: "Internal server error",
         error: "INTERNAL_SERVER_ERROR",
+      });
+    }
+  }
+
+  public async increaseXp(
+    req: Request<IUserGet, {}, IncreaseXpReqApi>,
+    res: Response<ApiResponse<true | null>>
+  ) {
+    try {
+      const { telegramId } = req.params;
+      const { xp } = req.body;
+
+      const user = await UserSchema.findOne({ telegram_id: telegramId }).lean(); // return object instead of Mongoose doc
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+          data: null,
+        });
+      }
+
+      // Get gRPC client and check if it's ready
+      const grpcClient = this.grpcManager.getAuthClient();
+
+      if (!grpcClient.isReady()) {
+        return res.status(503).json({
+          success: false,
+          message: "Raffle service temporarily unavailable",
+          data: null,
+        });
+      }
+
+      const xpResponse = await grpcClient.increaseXp(user.id, xp);
+
+      if (xpResponse && xpResponse.message === "XP increased") {
+        return res.status(200).json({
+          success: true,
+          message: "Xp increased successfully",
+          data: true,
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: "Failed to increase xp",
+        data: null,
+      });
+    } catch (error: any) {
+      console.error("Error in increaseXp:", {
+        errorMessage: error.message,
+        stack: error.stack,
+        code: error.code,
+      });
+
+      if (error.message === "gRPC client not ready") {
+        return res.status(503).json({
+          success: false,
+          message: "Service temporarily unavailable",
+          data: null,
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error while increasing xp",
+        data: null,
       });
     }
   }

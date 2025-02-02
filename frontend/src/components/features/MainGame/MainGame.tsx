@@ -1,218 +1,229 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 // import NumberFormatter from "@/components/shared/NumberFormatter/NumberFormatter";
-import { Button } from "@/components/shared/UI/button";
-import { Chip } from "@/components/shared/UI/Icons/Chip";
 import { PixelWrapper } from "@/components/shared/UI/PixelWrapper/pixelWrapper";
 import { Copy } from "@/components/shared/UI/Icons/Copy";
 import { formatNumber } from "@/helpers/formatCount";
 import { useAppDispatch } from "@/redux/store";
 import { MODALS, toggleModal } from "@/redux/features/modals.reducer";
-import BuyTicketsModal from "../../shared/Modals/BuyTicketsModal";
 import { User } from "@/types/user";
-import WalletNotConnectedModal from "@/components/shared/Modals/WalletConnectedModal";
-import LoadingPurchaseModal from "@/components/shared/Modals/LoadingPurchaseModal";
-import { CHAIN, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
-import { usePurchaseTicketsMutation } from "@/redux/services/wallet.api";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import {
+  useGetConfigQuery,
+  useGetCurrentRaffleQuery,
+} from "@/redux/services/raffle.api";
+import { useCloudStorage } from "@/hooks/useCloudeStorage";
+import { STORAGE_KEYS } from "@/utils/constants";
+import { intervalToDuration } from "date-fns";
+// import { connectionStatus } from "./constants";
+import { MainGameActions } from "./MainGameActions";
+import { TonFilled } from "@/components/shared/UI/Icons/TonFilled";
+import CubesLoading from "@/components/shared/Loading/CubesLoading";
+import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "sonner";
+import LostModal from "@/components/shared/Modals/LostModal";
+import WonModal from "@/components/shared/Modals/WonModal";
+import { GiftIcon } from "@/components/shared/UI/Icons/GiftIcon";
+import gsap from "gsap";
 
 interface MainGameProps {
   user: User | null;
 }
 
+interface Winner {
+  user_id: string;
+  amount: number;
+  position: number;
+}
+
+export const NANO_TON = "0000000";
+
 const MainGame: FC<MainGameProps> = ({ user }) => {
-  // const [prizePool] = useState(5);
-  const dispatch = useAppDispatch();
-  const [testD, setTestD] = useState<number>(0);
-
-  const [tonConnectUI] = useTonConnectUI();
-  const tonWallet = useTonWallet();
-
   const websocketUrl = import.meta.env.VITE_WEBSOCKET_URL;
 
-  const { lastMessage, readyState } = useWebSocket(
-    websocketUrl
+  const gameRef = useRef<HTMLDivElement>(null);
+
+  const dispatch = useAppDispatch();
+  const { lastMessage, readyState } = useWebSocket(websocketUrl);
+
+  const { data: tokenStorage } = useCloudStorage(STORAGE_KEYS.TOKEN);
+  const token = tokenStorage ? (tokenStorage as string) : null;
+
+  const [rafflePool, setRafflePool] = useState<number | null>(0);
+  const [winAmount, setWinAmount] = useState<number>(0);
+
+  const {
+    data: currentRaffle,
+    refetch: refetchCurrentRaffle,
+    isLoading: isLoadingCurrentRaffle,
+    isFetching: isFetchingCurrentRaffle,
+  } = useGetCurrentRaffleQuery(
+    { token: token ? token : "", telegram_id: user ? user.telegram_id : "" },
+    { skip: !user || !token || !readyState }
   );
 
-  const connectionStatus = {
-    [ReadyState.CONNECTING]: "Connecting",
-    [ReadyState.OPEN]: "Open",
-    [ReadyState.CLOSING]: "Closing",
-    [ReadyState.CLOSED]: "Closed",
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
-  }[readyState];
+  const { data: raffleConfig, isLoading: isLoadingConfig } = useGetConfigQuery(
+    { telegram_id: user ? user.telegram_id : "" },
+    { skip: !user }
+  );
+
+  const increaseTickets = (amount: number) => {
+    setRafflePool(rafflePool ? rafflePool + amount : amount);
+  };
+
+  const ticketsToPrice = (amount: number): null | string => {
+    if (raffleConfig) {
+      const { data: priceInfo } = raffleConfig;
+      const price = +priceInfo.ticket_price * amount;
+      return price.toString();
+    }
+    return "0";
+  };
 
   useEffect(() => {
-    if (lastMessage) {
+    if (lastMessage && user) {
       const data = JSON.parse(lastMessage.data);
       switch (data.type) {
         case "pool_update": {
-          setTestD(+data.total_pool);
+          alert("pool_update" + JSON.stringify(data.total_pool));
+          setRafflePool(+data.total_pool);
           break;
-        };
+        }
+        case "new_raffle": {
+          toast.message("A new raffle has started!", {
+            duration: 4000,
+          });
+          setRafflePool(0);
+          refetchCurrentRaffle();
+          break;
+        }
         case "raffle_ended": {
-          // const { winners, total_pool } = data as { winners: {user_id: string, amount: number}[], total_pool: number };
-          // if (winners.length > 0) {
-          //   dispatch(toggleModal({ key: MODALS.YOU_WON, value: { winners, total_pool } }));
-          // }
-          setTestD(0);
-          dispatch(toggleModal({ key: MODALS.YOU_LOST, value: false }));
+          setRafflePool(null);
+          const winners = data.winners as Winner[];
+          const isWinner = winners.find(
+            (winner) => winner.user_id === user?.id
+          );
+          console.log("isWinner", isWinner, winners);
+          if (isWinner) {
+            setWinAmount(isWinner.amount);
+            dispatch(toggleModal({ key: MODALS.WON_RAFFLE, value: true }));
+          } else {
+            setWinAmount(0);
+            if (currentRaffle && currentRaffle.data.participating) {
+              dispatch(toggleModal({ key: MODALS.YOU_LOST, value: true }));
+            } else {
+              toast.message("Raffle ended without you! Try it next time!", {
+                duration: 4000,
+              });
+            }
+          }
           break;
         }
       }
     }
-  }, [lastMessage, dispatch]);  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMessage, dispatch, refetchCurrentRaffle, user]);
 
-  console.log("status", connectionStatus, lastMessage);
-
-  const initBuyTickets = () => {
-    if (user) {
-      dispatch(
-        toggleModal({
-          key: user.ton_public_key
-            ? MODALS.BUY_TICKET
-            : MODALS.WALLET_NOT_CONNECTED,
-          value: true,
-        })
-      );
+  useEffect(() => {
+    if (currentRaffle) {
+      if (currentRaffle.data.participating) {
+        toast.message(
+          "You are participating in the current raffle! Good Luck!",
+          {
+            icon: <GiftIcon />,
+          }
+        );
+      }
+      setRafflePool(+currentRaffle.data.current_pool);
     }
-  };
+  }, [currentRaffle]);
 
-  const [purchaseTicketsMut] = usePurchaseTicketsMutation();
-
-  const purchaseTickets = async (amount: number) => {
-    const ADDRESS = "UQDn5NpxXKx7nPQbv-gewyYS2DdS6MtB6bE6HL2sM32IjVoF";
-    const ONE_TICKET_COST = 450;
-
-    const amountToBuy = amount * ONE_TICKET_COST + "00000";
-    await tonConnectUI
-      .sendTransaction({
-        network: CHAIN.MAINNET,
-        validUntil: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
-        messages: [
+  useLayoutEffect(() => {
+    if (gameRef.current) {
+      const gameBlock = gameRef.current;
+      const ctx = gsap.context(() => {
+        gsap.fromTo(
+          gameBlock.querySelector("#mainPastWinners"),
           {
-            address: ADDRESS,
-            amount: amountToBuy,
-          },
-        ],
-      })
-      .then((res) => {
-        // console.log("BOC", res);
-        // alert(res.boc);
-        purchaseTicketsMut({
-          boc: res.boc,
-          amount: amountToBuy,
-          address: tonWallet!.account.address,
-          telegramId: user!.telegram_id,
-        })
-          .unwrap()
-          .then((resp) => {
-            // alert(resp.message);
-            // alert(JSON.stringify(resp.data));
-            console.log(resp);
-            dispatch(
-              toggleModal([
-                {
-                  key: MODALS.PURCHASE_LOADING,
-                  value: false,
-                },
-                {
-                  key: MODALS.PURCHASE_SUCCESS,
-                  value: true,
-                },
-              ])
-            );
-          })
-          .catch(() => {
-            dispatch(
-              toggleModal([
-                {
-                  key: MODALS.PURCHASE_LOADING,
-                  value: false,
-                },
-                {
-                  key: MODALS.ERROR,
-                  value: true,
-                },
-              ])
-            );
-          });
-      })
-      .catch(() => {
-        toggleModal([
-          {
-            key: MODALS.PURCHASE_LOADING,
-            value: false,
+            y: 30,
+            opacity: 0,
           },
           {
-            key: MODALS.ERROR,
-            value: true,
-          },
-        ]);
+            y: 0,
+            opacity: 1,
+            duration: 0.85,
+            delay: 0.35,
+            ease: "power4.inOut",
+          }
+        );
       });
-  };
+      return () => ctx.revert();
+    }
+  }, [gameRef]);
+
+  const isRaffleLoaded =
+    rafflePool !== null &&
+    !isLoadingCurrentRaffle &&
+    !isFetchingCurrentRaffle &&
+    !isLoadingConfig &&
+    readyState === ReadyState.OPEN &&
+    currentRaffle &&
+    +currentRaffle.data.end_time * 1000 > Date.now()
+      ? true
+      : false;
 
   return (
-    <section className={"pt-16"}>
-      <BuyTicketsModal onPurchase={purchaseTickets} />
-      <WalletNotConnectedModal />
-      <LoadingPurchaseModal />
+    <section ref={gameRef} className={"pt-16"}>
+      <LostModal />
+      <WonModal winAmount={winAmount} />
       <div className="container">
         {/* PRIZE POOL */}
-        <h1 className="text-xl text-center uppercase mb-4">prize pool:</h1>
-
-        <div className="relative flex justify-center">
-          {/* <AmountShowcase defaultAmount={testD} /> */}
-          <p className="text-center text-2xl uppercase">{testD}</p>
+        <div>
+          <h1 className="text-xl text-center uppercase mb-4">
+            {rafflePool === null ? "Selecting winners" : "prize pool:"}
+          </h1>
+          <div className="flex justify-center relative">
+            <AnimatePresence mode="wait">
+              {isRaffleLoaded ? (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex justify-center gap-1.5 !text-2xl leading-none"
+                  key={"raffle_count"}
+                >
+                  <span className="inline-flex items-center relative text-white">
+                    {ticketsToPrice(rafflePool || 0)}
+                    <span className="absolute top-auto left-1 right-1 -bottom-[1px] bg-marigold w-auto h-[2px]" />
+                  </span>
+                  <TonFilled className="w-8 h-8" />
+                </motion.p>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex justify-center items-center h-8"
+                  key={"raffle_count_loaduing"}
+                >
+                  <CubesLoading size={12} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* TIME REMAINING */}
-        <div className="flex mt-8 flex-col justify-center items-center gap-3.5">
-          <h2 className="text-base uppercase text-center leading-3">
-            time remaining:
-          </h2>
-          <span className="text-center text-[20px] uppercase leading-none">
-            {/* HOURS */}
-            <span>23</span>
-            <span className="text-dim">H</span>
-            &nbsp;
-            {/* MINUTES */}
-            <span>30</span>
-            <span className="text-dim">M</span>
-            &nbsp;
-            {/* SECONDS */}
-            <span>15</span>
-            <span className="text-dim">S</span>
-          </span>
-        </div>
-
-        {/* BUY TICKETS */}
-        <div className="grid px-3.5 grid-cols-2 mt-14 justify-center items-center gap-4">
-          <Button onClick={initBuyTickets}>Buy Ticket</Button>
-          <Button
-            variant={"ghost"}
-            onClick={() => {
-              // setTestD(Math.floor(Math.random() * 7) + 1);
-              setTestD(testD + 1);
-            }}
-          >
-            How it works
-          </Button>
-        </div>
-        <a
-          href="https://www.google.com"
-          target="_blank"
-          className="flex mt-3.5 justify-center items-center gap-1.5 text-magnet text-xs uppercase text-center transition-colors duration-150 active:text-white"
-        >
-          <span className="relative inline-block">
-            <span className="relative inline-block">
-              PROOF OF FAIRNES
-              <span className="absolute bottom-[-2px] left-0 right-0 h-[1px] bg-liquor w-full" />
-            </span>
-            &nbsp; (FOR NERDS)
-          </span>
-          <Chip />
-        </a>
-
+        <RaffleCountdown
+          timeRemaining={
+            isRaffleLoaded && currentRaffle
+              ? +currentRaffle.data.end_time
+              : null
+          }
+        />
+        {/* ACTIONS */}
+        <MainGameActions user={user} increaseTickets={increaseTickets} />
         {/* PAST WINNERS */}
         <PastWinners />
       </div>
@@ -249,7 +260,7 @@ export const PastWinners: FC = () => {
     },
   ]);
   return (
-    <div className="relative mt-8">
+    <div id="mainPastWinners" className="relative mt-8">
       <PixelWrapper width={3} color="gray" />
       <div className="bg-inkwell pt-5 px-4 pb-4">
         <h2 className="uppercase text-base leading-none mb-3">PAST WINNERS:</h2>
@@ -282,6 +293,93 @@ export const PastWinners: FC = () => {
           ))}
         </ul>
       </div>
+    </div>
+  );
+};
+
+interface RaffleCountdownProps {
+  timeRemaining: number | null;
+}
+
+type Duration = {
+  hours: number;
+  minutes: number;
+  seconds: number;
+};
+
+const RaffleCountdown: FC<RaffleCountdownProps> = ({ timeRemaining }) => {
+  const [duration, setDuration] = useState<Duration>({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  useEffect(() => {
+    if (!timeRemaining) return;
+    const updateCountdown = () => {
+      const timestamp = timeRemaining * 1000;
+      const now = new Date();
+      const end = new Date(timestamp);
+
+      const duration = intervalToDuration({
+        start: now,
+        end: end,
+      });
+
+      setDuration({
+        hours: duration.hours && duration.hours > 0 ? duration.hours : 0,
+        minutes:
+          duration.minutes && duration.minutes > 0 ? duration.minutes : 0,
+        seconds:
+          duration.seconds && duration.seconds > 0 ? duration.seconds : 0,
+      });
+    };
+
+    // Initial update
+    updateCountdown();
+
+    // Update every second
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeRemaining]);
+
+  // Format number to always show two digits
+  const formatNumber = (num: number) => num.toString().padStart(2, "0");
+
+  return (
+    <div className="flex mt-8 flex-col justify-center items-center gap-3.5">
+      <h2 className="text-base uppercase text-center leading-3">
+        time remaining:
+      </h2>
+      <span className={`text-center text-[20px] uppercase leading-none`}>
+        <span
+          className={`transition-all duration-300 ${
+            !timeRemaining ? "!text-dim" : "text-white"
+          }`}
+        >
+          {formatNumber(duration.hours)}
+        </span>
+        <span className="text-dim">H</span>
+        &nbsp;
+        <span
+          className={`transition-all duration-300 ${
+            !timeRemaining ? "!text-dim" : "text-white"
+          }`}
+        >
+          {formatNumber(duration.minutes)}
+        </span>
+        <span className="text-dim">M</span>
+        &nbsp;
+        <span
+          className={`transition-all duration-300 ${
+            !timeRemaining ? "!text-dim" : "text-white"
+          }`}
+        >
+          {formatNumber(duration.seconds)}
+        </span>
+        <span className="text-dim">S</span>
+      </span>
     </div>
   );
 };

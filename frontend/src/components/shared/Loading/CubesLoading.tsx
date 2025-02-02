@@ -1,12 +1,33 @@
 import { FC } from "react";
-import cl from "./Loading.module.css";
+import styles from "./Loading.module.css";
 
-const CubesLoading: FC = () => {
+interface CubesLoadingProps {
+  size?: number;
+}
+
+const CubesLoading: FC<CubesLoadingProps> = ({ size = 15 }) => {
+  const boxStyle = {
+    width: `${size}px`,
+    height: `${size}px`,
+  };
+
   return (
-    <div className={cl.preloader}>
-      <div className={cl.preloaderBox} />
-      <div className={cl.preloaderBox} />
-      <div className={cl.preloaderBox} />
+    <div
+      className={`relative ${styles.preloader}`}
+      style={{ transform: `scale(1.5) translateX(-${size / 3}px)` }}
+    >
+      <div
+        className={`absolute border border-white ${styles.preloaderBox}`}
+        style={{ ...boxStyle, left: `-${size * 1.67}px` }}
+      />
+      <div
+        className={`absolute border border-white ${styles.preloaderBox}`}
+        style={boxStyle}
+      />
+      <div
+        className={`absolute border border-white ${styles.preloaderBox}`}
+        style={{ ...boxStyle, left: `${size * 1.67}px` }}
+      />
     </div>
   );
 };

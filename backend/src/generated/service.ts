@@ -66,6 +66,15 @@ export interface ListUserReferralsResponse {
   telegram_ids: string[];
 }
 
+export interface IncreaseXpRequest {
+  user_id: string;
+  xp: number;
+}
+
+export interface IncreaseXpResponse {
+  message: string;
+}
+
 // Auth Service Client Interface
 export interface AuthServiceClient extends grpc.Client {
   authenticateTelegram(
@@ -127,6 +136,16 @@ export interface AuthServiceClient extends grpc.Client {
       response: ListUserReferralsResponse
     ) => void
   ): grpc.ClientUnaryCall;
+
+  increaseXp(
+    request: IncreaseXpRequest,
+    metadata: grpc.Metadata,
+    options: grpc.CallOptions,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: IncreaseXpResponse
+    ) => void
+  ): grpc.ClientUnaryCall;
 }
 
 // Auth Service Interface
@@ -152,6 +171,7 @@ export interface AuthServiceServer extends grpc.UntypedServiceImplementation {
     ListUserReferralsRequest,
     ListUserReferralsResponse
   >;
+  increaseXp: grpc.handleUnaryCall<IncreaseXpRequest, IncreaseXpResponse>;
 }
 
 // Auth Service Definition
@@ -211,6 +231,17 @@ export const AuthServiceService: grpc.ServiceDefinition<AuthServiceServer> = {
       Buffer.from(JSON.stringify(value)),
     responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
   },
+  increaseXp: {
+    path: "/auth.AuthService/IncreaseXp",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: IncreaseXpRequest) =>
+      Buffer.from(JSON.stringify(value)),
+    requestDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+    responseSerialize: (value: IncreaseXpResponse) =>
+      Buffer.from(JSON.stringify(value)),
+    responseDeserialize: (value: Buffer) => JSON.parse(value.toString()),
+  },
   listUserReferrals: {
     path: "/auth.AuthService/ListUserReferrals",
     requestStream: false,
@@ -230,9 +261,13 @@ export const AuthServiceService: grpc.ServiceDefinition<AuthServiceServer> = {
 // ____________
 // Raffle Types
 
+export type GameType = "lucky_raffle" | "lucky_31";
+
 export interface PurchaseTicketsRequest {
+  game_type: GameType;
   user_id: string;
   ticket_count: number;
+  toNumber?: string;
 }
 
 export interface PurchaseTicketsResponse {

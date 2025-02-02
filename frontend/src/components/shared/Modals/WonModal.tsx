@@ -4,10 +4,16 @@ import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { MODALS, toggleModal } from "@/redux/features/modals.reducer";
 import { WonIcon } from "../UI/Icons/WonIcon";
 
-const LostModal: FC = () => {
+interface WalletConnectedProps {
+  winAmount: number;
+}
+
+const WonModal: FC<WalletConnectedProps> = ({ winAmount }) => {
   const MODAL_KEY = MODALS.WON_RAFFLE;
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector((state) => state.modals[MODAL_KEY]);
+
+  console.log(winAmount);
 
   const onOpenChange = (isOpen: boolean) => {
     dispatch(toggleModal({ key: MODAL_KEY, value: isOpen }));
@@ -17,10 +23,12 @@ const LostModal: FC = () => {
     <Dialog open={isOpen} onOpenChange={(v) => onOpenChange(v)}>
       <DialogContent variant={"info"}>
         <WonIcon />
-        <p>You won! <br /> Expect a payout soon!</p>
+        <p>
+          You won! <br /> Expect a payout soon!
+        </p>
       </DialogContent>
     </Dialog>
   );
 };
 
-export default LostModal;
+export default WonModal;

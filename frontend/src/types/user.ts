@@ -23,6 +23,18 @@ export interface User {
   referred_by?: string;
 }
 
+export interface TgUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+}
+
+export interface ReferralUser {
+  telegram_id: string;
+  xp: number;
+}
+
 export interface AppInitParams {
   referralCode?: string;
 }

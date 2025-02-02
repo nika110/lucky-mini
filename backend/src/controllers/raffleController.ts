@@ -8,7 +8,7 @@ import { TonTransactionWalletService } from "../services/tonWallet";
 
 interface PayoutRequest {
   password: string;
-  payouts: Array<{
+  winners: Array<{
     user_id: string;
     amount: string;
   }>;
@@ -35,7 +35,8 @@ export class RaffleController {
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
-      const { password, payouts } = req.body;
+      const { password, winners } = req.body;
+      console.log("payouts STARTED", req.body);
 
       // Validate password
       if (password !== process.env.PAYOUT_PASSWORD) {
@@ -47,7 +48,7 @@ export class RaffleController {
       }
 
       // Validate payouts array
-      if (!Array.isArray(payouts) || payouts.length === 0) {
+      if (!Array.isArray(winners) || winners.length === 0) {
         return res.status(400).json({
           success: false,
           message: "Invalid payouts data",
@@ -57,15 +58,21 @@ export class RaffleController {
 
       // Process each payout
       const tonWalletService = TonTransactionWalletService.getInstance();
-      const results = [];
+      console.log("payouts", "SERVICE");
+      const results = [] as {
+        user_id: string;
+        amount: string;
+        tx_hash: string | undefined;
+      }[];
       const errors = [];
 
-      for (const payout of payouts) {
+      for (const payout of winners) {
         try {
           // Find user's wallet address
-          const user = await UserSchema.findById(payout.user_id)
-            .select("wallet_address")
-            .lean();
+          const user = await UserSchema.findOne({ id: payout.user_id })
+            .select("-__v") // stuff users
+            .lean(); // return object instead of Mongoose doc
+          console.log("PAYOUT FOR USER", user, payout.user_id);
 
           if (!user || !user.ton_public_key) {
             errors.push({
@@ -80,6 +87,8 @@ export class RaffleController {
             user.ton_public_key,
             payout.amount
           );
+
+          console.log("txResult", txResult);
 
           if (txResult.success) {
             results.push({
@@ -105,13 +114,13 @@ export class RaffleController {
       return res.status(200).json({
         success: true,
         message: "Payout process completed",
-        data: true,
+        data: {
+          errors: errors,
+          results: results,
+        },
       });
     } catch (error: any) {
-      console.error("Error in processPayout:", {
-        errorMessage: error.message,
-        stack: error.stack,
-      });
+      console.error("Error in processPayout:", error);
 
       return res.status(500).json({
         success: false,
@@ -122,13 +131,14 @@ export class RaffleController {
   }
 
   public async getCurrentRaffle(
-    req: Request<{}, {}, { userId: string }>,
+    req: Request<IUserGet, {}, { userId: string }>,
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
-      const { userId } = req.body;
+      const { telegramId } = req.params;
+      const token = req.headers.authorization?.split(" ")[1];
 
-      if (!userId) {
+      if (!telegramId || !token) {
         return res.status(400).json({
           success: false,
           message: "User ID is required",
@@ -137,17 +147,22 @@ export class RaffleController {
       }
 
       const grpcClient = this.grpcManager.getRaffleClient();
-      const currentRaffle = await grpcClient.getCurrentRaffle(userId);
+
+      if (!grpcClient.isReady()) {
+        return res.status(503).json({
+          success: false,
+          message: "Service temporarily unavailable",
+          data: null,
+        });
+      }
+      console.log("token", token);
+
+      const currentRaffle = await grpcClient.getCurrentRaffle(token);
 
       return res.status(200).json({
         success: true,
         message: "Current raffle retrieved successfully",
-        data: {
-          raffleId: currentRaffle.raffle_id,
-          endTime: currentRaffle.end_time,
-          currentPool: currentRaffle.current_pool,
-          participating: currentRaffle.participating,
-        },
+        data: currentRaffle,
       });
     } catch (error: any) {
       console.error("Error in getCurrentRaffle:", {
@@ -186,7 +201,7 @@ export class RaffleController {
   ): Promise<Response<ApiResponse<any>>> {
     try {
       const { telegramId } = req.params;
-      const { boc, amount, userAddress } = req.body;
+      const { boc, game_type, userAddress, toNumber } = req.body;
 
       const user = await UserSchema.findOne({ telegram_id: telegramId })
         .select("-__v") // stuff users
@@ -245,16 +260,26 @@ export class RaffleController {
           });
         }
 
-        // TEST 1$ -> 0.15 TON = 1 ticket
+        const authClient = this.grpcManager.getAuthClient();
+        if (!authClient.isReady()) {
+          return res.status(503).json({
+            success: false,
+            message: "Auth service temporarily unavailable",
+            data: null,
+          });
+        }
+        const configResponse = await authClient.getConfig();
 
         const calculatedAmount = Math.floor(
-          (+validatedTransaction.amount / +process.env.TICKET_PRICE!) as number
+          (+validatedTransaction.amount / configResponse.ticket_price) as number
         );
 
         // Call gRPC purchaseTicket method
         const responseTickets = await grpcClient.purchaseTickets(
           user.id,
-          calculatedAmount
+          calculatedAmount,
+          game_type,
+          toNumber ? toNumber : undefined
         );
 
         console.log(responseTickets);
@@ -272,7 +297,7 @@ export class RaffleController {
           success: true,
           message: "Tickets purchased successfully",
           data: {
-            amount: responseTickets.ticket_numbers.length,
+            amount: calculatedAmount,
             raffleId: responseTickets.raffle_id,
           },
         });

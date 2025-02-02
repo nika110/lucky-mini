@@ -16,14 +16,6 @@ const baseQuery = fetchBaseQuery({
           resolve(null);
         }
       })
-      //  WebApp.CloudStorage.removeItem(STORAGE_KEYS.TOKEN, (_, r) => {
-      //   if (r && typeof r === "string") {
-      //     resolve(r);
-      //   } else {
-      //     resolve(null);
-      //   }
-      // })
-
     );
 
     if (token) {
@@ -68,11 +60,11 @@ const baseQueryWithReauth: BaseQueryFn<
   return result;
 };
 
-const baseQueryWithRetry = retry(baseQueryWithReauth, { maxRetries: 2 });
+const baseQueryWithRetry = retry(baseQueryWithReauth, { maxRetries: 1 });
 
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithRetry,
   endpoints: () => ({}),
-  tagTypes: ["User", "Wallet"],
+  tagTypes: ["User", "Wallet", "ReferralList"],
 });

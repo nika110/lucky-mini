@@ -24,7 +24,7 @@ const app = express();
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 10000, // Limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
 });
 
@@ -40,6 +40,15 @@ app.use(
     credentials: true,
   })
 );
+
+app.disable('etag');
+
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Expires', '-1');
+  res.set('Pragma', 'no-cache');
+  next();
+});
 
 app.use(
   helmet({
@@ -94,7 +103,7 @@ app.use("*", (req: Request, res: Response) => {
 
 // Uncaught Exception Handler
 process.on("uncaughtException", (err: Error) => {
-  console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
+  console.error("UNCAUGHT EXCEPTION!");
   console.error(err.name, err.message);
   // process.exit(1);
 });
@@ -103,7 +112,7 @@ process.on("uncaughtException", (err: Error) => {
 process.on("unhandledRejection", (err: Error) => {
   console.error("UNHANDLED REJECTION! 💥 Shutting down...");
   console.error(err.name, err.message);
-  process.exit(1);
+  // process.exit(1);
 });
 
 // Graceful shutdown on SIGTERM

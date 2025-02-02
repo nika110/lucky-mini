@@ -23,6 +23,8 @@ message IncreaseBalanceResponse {
 message PurchaseTicketsRequest {
     string user_id = 1;
     int32 ticket_count = 2;
+    string game_type = 3;
+    optional string toNumber = 4;
 }
 
 message PurchaseTicketsResponse {

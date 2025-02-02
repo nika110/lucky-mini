@@ -43,7 +43,7 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
             # Purchase tickets
 
             if request.game_type == "lucky_31":
-                ticket_numbers, raffle_id = self.raffle_31_service.purchase_tickets(user_id=request.user_id, ticket_count=request.ticket_count, to_number=request.to_number)
+                ticket_numbers, raffle_id = self.raffle_31_service.purchase_tickets(user_id=request.user_id, ticket_count=request.ticket_count, to_number=request.toNumber)
 
                 check_if_user_has_referrer = await self.user_service.get_user_by_id(request.user_id)
                 if check_if_user_has_referrer.referred_by:

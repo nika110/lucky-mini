@@ -48,12 +48,13 @@ export interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof dialogContentVariants> {
   asChild?: boolean;
+  closeBtn?: boolean;
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, variant, ...props }, ref) => (
+>(({ className, children, variant,closeBtn = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -64,7 +65,7 @@ const DialogContent = React.forwardRef<
       <PixelWrapper width={3} color="gray" />
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-none opacity-70 ring-none transition-opacity hover:opacity-100 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <Close className="h-4 w-4" />
+        {closeBtn && <Close className="h-4 w-4" />}
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

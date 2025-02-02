@@ -7,6 +7,12 @@ import { api } from "./api";
 //   Wallet,
 // } from "@/types/wallet";
 import { ApiResponse } from "@/types/api";
+import { GAME_TYPE } from "@/types/raffle";
+
+interface PurchaseRes {
+  amount: number;
+  raffleId: string;
+}
 
 export const walletApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -24,16 +30,25 @@ export const walletApi = api.injectEndpoints({
       invalidatesTags: ["Wallet", "User"],
     }),
     purchaseTickets: build.mutation<
-      ApiResponse<User>,
-      { address: string; amount: string; boc: string; telegramId: string }
+      ApiResponse<PurchaseRes>,
+      {
+        address: string;
+        amount: string;
+        boc: string;
+        telegramId: string;
+        gameType: GAME_TYPE;
+        toNumber?: string;
+      }
     >({
-      query: ({ address, amount, boc, telegramId }) => ({
+      query: ({ address, amount, boc, telegramId, gameType, toNumber }) => ({
         url: `/users/${telegramId}/purchase-tickets`,
         method: "POST",
         body: {
           boc,
+          game_type: gameType,
           amount,
           userAddress: address,
+          toNumber: toNumber ? toNumber : undefined,
         },
       }),
       // invalidatesTags: ["Tickets"],

@@ -4,12 +4,12 @@ import { ROUTES } from "@/routes/routes";
 import { HomeIcon } from "@/components/shared/UI/Icons/HomeIcon";
 import { Link, useLocation } from "react-router-dom";
 import { FrensIcon } from "@/components/shared/UI/Icons/FrensIcon";
-import { LeadersIcon } from "@/components/shared/UI/Icons/LeadersIcon";
 import { WalletIcon } from "@/components/shared/UI/Icons/WalletIcon";
 import { useTonWallet } from "@tonconnect/ui-react";
 import { useUpdateWalletMutation } from "@/redux/services/wallet.api";
 import { useTelegramUser } from "@/hooks/useTelegramUser";
-import { toast } from "sonner";
+import { GamesIcon } from "@/components/shared/UI/Icons/GamesIcon";
+import { GamesActiveIcon } from "@/components/shared/UI/Icons/GamesActiveIcon";
 
 interface NavbarLink {
   route: string;
@@ -27,10 +27,10 @@ const navbarLinks: NavbarLink[] = [
     iconActive: <HomeIcon color="white" />,
   },
   {
-    route: ROUTES.LEADERS,
-    title: "Leaders",
-    icon: <LeadersIcon color="gray" />,
-    iconActive: <LeadersIcon color="white" />,
+    route: ROUTES.GAMES,
+    title: "Games",
+    icon: <GamesIcon />,
+    iconActive: <GamesActiveIcon />,
   },
   {
     route: ROUTES.REFERRAL,
@@ -71,12 +71,6 @@ const Navbar: FC = () => {
           tonPublicKey,
           telegramId: user.telegram_id,
         })
-          .unwrap()
-          .catch(() => {
-            toast.error(
-              "Failed to connect your wallet to our service please try again later!"
-            );
-          });
       }
     }
   }, [tonWallet, updateTonWallet, user]);
@@ -85,6 +79,7 @@ const Navbar: FC = () => {
     <>
       <div className="h-[35px]"></div>
       <div
+        id="navbar"
         className={`sticky z-[49] left-0 right-0 top-[-100%] bottom-10 shadow-[0px_-10px_20px_0_rgba(0,0,0,0.4)] flex flex-nowrap items-center justify-center bg-inkwell h-[71px] w-[calc(100%-32px)] mx-auto ${cl.navbar}`}
       >
         <PixelWrapperNavbar />

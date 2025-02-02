@@ -20,6 +20,11 @@ import {
   GetConfigResponse,
   ListUserReferralsResponse,
   ListUserReferralsRequest,
+  IncreaseBalanceResponse,
+  IncreaseBalanceRequest,
+  IncreaseXpRequest,
+  IncreaseXpResponse,
+  GameType,
 } from "../generated/service";
 
 interface GrpcError extends Error {
@@ -116,12 +121,19 @@ export class RaffleClient extends BaseGrpcClient {
 
   async purchaseTickets(
     userId: string,
-    ticketCount: number
+    ticketCount: number,
+    gameType: GameType,
+    toNumber: string
   ): Promise<PurchaseTicketsResponse> {
     const request: PurchaseTicketsRequest = {
       user_id: userId,
       ticket_count: ticketCount,
+      game_type: gameType,
     };
+
+    if (toNumber) {
+      request.toNumber = toNumber;
+    }
 
     return new Promise((resolve, reject) => {
       this.client.purchaseTickets(
@@ -147,6 +159,27 @@ export class RaffleClient extends BaseGrpcClient {
     };
     return new Promise((resolve, reject) => {
       this.client.getCurrentRaffle(
+        request,
+        new grpc.Metadata(),
+        { deadline: this.createDeadline() },
+        (error, response) => {
+          if (error) {
+            reject(this.handleGrpcError(error as GrpcError));
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  }
+
+  async increaseBalance(
+    user_id: string,
+    amount: number
+  ): Promise<IncreaseBalanceResponse> {
+    const request: IncreaseBalanceRequest = { user_id, amount };
+    return new Promise((resolve, reject) => {
+      this.client.increaseBalance(
         request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
@@ -340,6 +373,24 @@ export class AuthClient extends BaseGrpcClient {
 
     return new Promise((resolve, reject) => {
       this.grpcClient.validateToken(
+        request,
+        new grpc.Metadata(),
+        { deadline: this.createDeadline() },
+        (error, response) => {
+          if (error) {
+            reject(this.handleGrpcError(error as GrpcError));
+          } else {
+            resolve(response);
+          }
+        }
+      );
+    });
+  }
+
+  async increaseXp(user_id: string, xp: number): Promise<IncreaseXpResponse> {
+    const request: IncreaseXpRequest = { user_id, xp };
+    return new Promise((resolve, reject) => {
+      this.grpcClient.increaseXp(
         request,
         new grpc.Metadata(),
         { deadline: this.createDeadline() },
