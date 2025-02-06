@@ -32,10 +32,18 @@ class RaffleMonitor:
             # Get total pool from Redis
             total_pool = float(await Database.redis.hget(f"raffle:{raffle.id}", "total_pool") or 0)
 
-            # Select winners (this now includes the delay and new raffle creation)
             winners = await self.winner_service.select_winners(raffle.id)
 
-            await self.raffle_repo.request_winners_to_backend(winners)
+            winners_dict = [
+                {
+                    "user_id": winner.user_id,
+                    "amount": winner.amount,
+                    "position": winner.position
+                }
+                for winner in winners
+            ]
+
+            await self.raffle_repo.request_winners_to_backend(winners_dict)
 
             # Update raffle with winners
             await self.raffle_repo.update_winners(raffle.id, winners, total_pool)

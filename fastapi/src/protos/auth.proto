@@ -48,12 +48,15 @@ message Referral {
     int32 xp = 2;
 }
 
-message ListUserReferralsRequest{
+message ListUserReferralsRequest {
     string user_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
 }
 
 message ListUserReferralsResponse {
     repeated Referral referrals = 1;
+    int32 total_count = 2;
 }
 
 message UpdateUserReferralRequest {

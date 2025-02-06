@@ -162,8 +162,17 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
     async def ListUserReferrals(self, request, context):
         try:
-            referrals = await self.auth_service.get_user_referral_list(request.user_id)
+            page = request.page or 1
+            page_size = request.page_size or 10
+
+            referrals, total_count = await self.auth_service.get_user_referral_list(
+                request.user_id,
+                page,
+                page_size
+            )
+
             response = auth_pb2.ListUserReferralsResponse()
+            response.total_count = total_count
 
             for referral in referrals:
                 referral_proto = auth_pb2.Referral()

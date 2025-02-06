@@ -193,8 +193,17 @@ class AuthService:
         await self.user_repo.update_user(user)
         return user
 
-    async def get_user_referral_list(self, user_id: str) -> list:
-        return await self.user_repo.get_user_referral_list(user_id)
+    async def get_user_referral_list(self, user_id: str, page: int = 1, page_size: int = 10) -> tuple:
+        user = await self.user_repo.get_user_by_id(user_id)
+        if not user or not user.referrals:
+            return [], 0
+
+        total_count = len(user.referrals)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        paginated_referrals = user.referrals[start:end]
+        return paginated_referrals, total_count
 
     async def increase_user_xp(self, user_id: str, xp: int):
         user = await self.user_repo.get_user_by_id(user_id)
