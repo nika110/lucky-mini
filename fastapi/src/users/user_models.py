@@ -15,7 +15,9 @@ class User(BaseModel):
     xp: int
     referred_by: Optional[str]
     referrals: Optional[list[Referral]] = []
-
+    last_login: Optional[datetime] = None
+    login_streak: int = 0
+    last_streak_update: Optional[datetime] = None
 
     class Config:
         from_attributes = True

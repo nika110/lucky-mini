@@ -12,5 +12,10 @@ class NumberBetRepository:
         result = await self.collection.insert_one(number_bet.dict())
         return str(result.inserted_id)
 
+    async def get_user_bets(self, user_id: str) -> List[NumberBet]:
+        cursor = self.collection.find({"user_id": user_id}).sort("purchase_time", -1)
+        tickets = await cursor.to_list(None)
+        return [NumberBet(**ticket) for ticket in tickets]
+
 
 

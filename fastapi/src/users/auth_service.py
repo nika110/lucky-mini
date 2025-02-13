@@ -24,6 +24,16 @@ class AuthService:
 
         self.settings=settings
 
+        self.streak_xp_rewards = {
+            1: 1,  # Day 1: 1 XP
+            2: 2,  # Day 2: 2 XP
+            3: 4,  # Day 3: 4 XP
+            4: 5,  # Day 4: 5 XP
+            5: 6,  # Day 5: 6 XP
+            6: 6,  # Day 6: 6 XP
+            7: 7,  # Day 7: 7 XP
+        }
+
 
 
         self.secret_key = hmac.new(
@@ -79,12 +89,42 @@ class AuthService:
             logger.error(f"Verification error: {str(e)}")
             return None
 
+    async def update_login_streak(self, user: User) -> Tuple[User, int]:
+        current_time = datetime.utcnow()
+        xp_earned = 0
+
+        if user.last_login is None:
+            # First login ever
+            user.login_streak = 1
+            xp_earned = self.streak_xp_rewards[1]
+        else:
+            # Calculate time since last login
+            time_diff = current_time - user.last_login
+
+            # Check if this is a new day (more than 24 hours from last streak update)
+            if user.last_streak_update and (current_time - user.last_streak_update).days >= 1:
+                if time_diff.days == 1:
+                    # Consecutive day login
+                    user.login_streak = (user.login_streak % 7) + 1
+                    xp_earned = self.streak_xp_rewards[user.login_streak]
+                elif time_diff.days > 1:
+                    # Streak broken
+                    user.login_streak = 1
+                    xp_earned = self.streak_xp_rewards[1]
+
+        user.last_login = current_time
+        user.last_streak_update = current_time
+        user.xp += xp_earned
+
+        await self.user_repo.update_user(user)
+        return user, xp_earned
+
     async def authenticate_telegram(
             self,
             telegram_id: str,
             telegram_auth_code: str,
             referred_by: Optional[str] = None
-    ) -> Tuple[User, str]:
+    ) -> tuple[User, str, int]:
 
         referred_by_user = None
         if referred_by:
@@ -122,10 +162,12 @@ class AuthService:
                     referred_by_user.referrals = []
                 referred_by_user.referrals.append(new_referral)
                 await self.user_repo.update_user(referred_by_user)
+                
+        user, xp_earned = await self.update_login_streak(user)
 
         token = self.create_token(user)
 
-        return user, token
+        return user, token, xp_earned
 
     def create_token(self, user: User) -> str:
         payload = {

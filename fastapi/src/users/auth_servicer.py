@@ -63,7 +63,6 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             context: grpc.aio.ServicerContext,
     ) -> auth_pb2.AuthTelegramResponse:
         try:
-
             user, token = await self.auth_service.authenticate_telegram(
                 telegram_id=request.telegram_id,
                 telegram_auth_code=request.telegram_auth_code,
@@ -76,17 +75,16 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             )
 
             logger.info(f"Successfully authenticated user: {user.telegram_id}")
+            logger.info(f"Current login streak: {user.login_streak}")
             return response
 
         except ValueError as e:
             logger.error(f"Authentication validation error: {str(e)}")
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
-            return auth_pb2.AuthTelegramResponse()  # Return empty response after abort
-
         except Exception as e:
             logger.error(f"Authentication error: {str(e)}")
             await context.abort(grpc.StatusCode.INTERNAL, str(e))
-            return auth_pb2.AuthTelegramResponse()  # Return empty response after abort
+
 
     async def UpdateTonWallet(
             self,

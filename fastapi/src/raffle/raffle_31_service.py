@@ -76,3 +76,9 @@ class Raffle31Service:
         await self.buffered_websocket_manager.add_to_buffer(current_raffle.id, ticket_count)
 
         return ticket_numbers, current_raffle.id
+
+    async def get_total_pool(self, raffle_id: str) -> dict:
+        return {"5":10}
+
+
+

@@ -24,13 +24,15 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0craffle.proto\x12\x06raffle\"9\n\x16IncreaseBalanceRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x05\"*\n\x17IncreaseBalanceResponse\x12\x0f\n\x07\x62\x61lance\x18\x01 \x01(\x05\"v\n\x16PurchaseTicketsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x14\n\x0cticket_count\x18\x02 \x01(\x05\x12\x11\n\tgame_type\x18\x03 \x01(\t\x12\x15\n\x08toNumber\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_toNumber\"D\n\x17PurchaseTicketsResponse\x12\x16\n\x0eticket_numbers\x18\x01 \x03(\t\x12\x11\n\traffle_id\x18\x02 \x01(\t\"2\n\x17GetCurrentRaffleRequest\x12\x17\n\x0fuser_auth_token\x18\x01 \x01(\t\"l\n\x18GetCurrentRaffleResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x02 \x01(\x03\x12\x14\n\x0c\x63urrent_pool\x18\x03 \x01(\x01\x12\x15\n\rparticipating\x18\x04 \x01(\x08\"\x19\n\x17GetRaffleResultsRequest\";\n\x06Winner\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x01\x12\x10\n\x08position\x18\x03 \x01(\x05\"\x88\x01\n\x18GetRaffleResultsResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\x03\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\x03\x12\x12\n\ntotal_pool\x18\x04 \x01(\x01\x12\x1f\n\x07winners\x18\x05 \x03(\x0b\x32\x0e.raffle.Winner2\xe5\x02\n\rRaffleService\x12R\n\x0fPurchaseTickets\x12\x1e.raffle.PurchaseTicketsRequest\x1a\x1f.raffle.PurchaseTicketsResponse\x12U\n\x10GetCurrentRaffle\x12\x1f.raffle.GetCurrentRaffleRequest\x1a .raffle.GetCurrentRaffleResponse\x12R\n\x0fIncreaseBalance\x12\x1e.raffle.IncreaseBalanceRequest\x1a\x1f.raffle.IncreaseBalanceResponse\x12U\n\x10GetRaffleResults\x12\x1f.raffle.GetRaffleResultsRequest\x1a .raffle.GetRaffleResultsResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0craffle.proto\x12\x06raffle\"9\n\x16IncreaseBalanceRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x05\"*\n\x17IncreaseBalanceResponse\x12\x0f\n\x07\x62\x61lance\x18\x01 \x01(\x05\"v\n\x16PurchaseTicketsRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x14\n\x0cticket_count\x18\x02 \x01(\x05\x12\x11\n\tgame_type\x18\x03 \x01(\t\x12\x15\n\x08toNumber\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_toNumber\"D\n\x17PurchaseTicketsResponse\x12\x16\n\x0eticket_numbers\x18\x01 \x03(\t\x12\x11\n\traffle_id\x18\x02 \x01(\t\"E\n\x17GetCurrentRaffleRequest\x12\x17\n\x0fuser_auth_token\x18\x01 \x01(\t\x12\x11\n\tgame_type\x18\x02 \x01(\t\"\xe8\x01\n\x18GetCurrentRaffleResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x02 \x01(\x03\x12\x15\n\rparticipating\x18\x03 \x01(\x08\x12\x14\n\x0c\x63urrent_pool\x18\x04 \x01(\x01\x12,\n\rlucky_31_data\x18\x05 \x01(\x0b\x32\x13.raffle.Lucky31DataH\x00\x12\x34\n\x11lucky_raffle_data\x18\x06 \x01(\x0b\x32\x17.raffle.LuckyRaffleDataH\x00\x42\x16\n\x14raffle_specific_data\"\x83\x01\n\x0bLucky31Data\x12>\n\x0eticket_numbers\x18\x01 \x03(\x0b\x32&.raffle.Lucky31Data.TicketNumbersEntry\x1a\x34\n\x12TicketNumbersEntry\x12\x0b\n\x03key\x18\x01 \x01(\x03\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\"\x11\n\x0fLuckyRaffleData\"\x19\n\x17GetRaffleResultsRequest\";\n\x06Winner\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x0e\n\x06\x61mount\x18\x02 \x01(\x01\x12\x10\n\x08position\x18\x03 \x01(\x05\"\x88\x01\n\x18GetRaffleResultsResponse\x12\x11\n\traffle_id\x18\x01 \x01(\t\x12\x12\n\nstart_time\x18\x02 \x01(\x03\x12\x10\n\x08\x65nd_time\x18\x03 \x01(\x03\x12\x12\n\ntotal_pool\x18\x04 \x01(\x01\x12\x1f\n\x07winners\x18\x05 \x03(\x0b\x32\x0e.raffle.Winner2\xe5\x02\n\rRaffleService\x12R\n\x0fPurchaseTickets\x12\x1e.raffle.PurchaseTicketsRequest\x1a\x1f.raffle.PurchaseTicketsResponse\x12U\n\x10GetCurrentRaffle\x12\x1f.raffle.GetCurrentRaffleRequest\x1a .raffle.GetCurrentRaffleResponse\x12R\n\x0fIncreaseBalance\x12\x1e.raffle.IncreaseBalanceRequest\x1a\x1f.raffle.IncreaseBalanceResponse\x12U\n\x10GetRaffleResults\x12\x1f.raffle.GetRaffleResultsRequest\x1a .raffle.GetRaffleResultsResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'raffle_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
+  _globals['_LUCKY31DATA_TICKETNUMBERSENTRY']._loaded_options = None
+  _globals['_LUCKY31DATA_TICKETNUMBERSENTRY']._serialized_options = b'8\001'
   _globals['_INCREASEBALANCEREQUEST']._serialized_start=24
   _globals['_INCREASEBALANCEREQUEST']._serialized_end=81
   _globals['_INCREASEBALANCERESPONSE']._serialized_start=83
@@ -40,15 +42,21 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PURCHASETICKETSRESPONSE']._serialized_start=247
   _globals['_PURCHASETICKETSRESPONSE']._serialized_end=315
   _globals['_GETCURRENTRAFFLEREQUEST']._serialized_start=317
-  _globals['_GETCURRENTRAFFLEREQUEST']._serialized_end=367
-  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_start=369
-  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_end=477
-  _globals['_GETRAFFLERESULTSREQUEST']._serialized_start=479
-  _globals['_GETRAFFLERESULTSREQUEST']._serialized_end=504
-  _globals['_WINNER']._serialized_start=506
-  _globals['_WINNER']._serialized_end=565
-  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_start=568
-  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_end=704
-  _globals['_RAFFLESERVICE']._serialized_start=707
-  _globals['_RAFFLESERVICE']._serialized_end=1064
+  _globals['_GETCURRENTRAFFLEREQUEST']._serialized_end=386
+  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_start=389
+  _globals['_GETCURRENTRAFFLERESPONSE']._serialized_end=621
+  _globals['_LUCKY31DATA']._serialized_start=624
+  _globals['_LUCKY31DATA']._serialized_end=755
+  _globals['_LUCKY31DATA_TICKETNUMBERSENTRY']._serialized_start=703
+  _globals['_LUCKY31DATA_TICKETNUMBERSENTRY']._serialized_end=755
+  _globals['_LUCKYRAFFLEDATA']._serialized_start=757
+  _globals['_LUCKYRAFFLEDATA']._serialized_end=774
+  _globals['_GETRAFFLERESULTSREQUEST']._serialized_start=776
+  _globals['_GETRAFFLERESULTSREQUEST']._serialized_end=801
+  _globals['_WINNER']._serialized_start=803
+  _globals['_WINNER']._serialized_end=862
+  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_start=865
+  _globals['_GETRAFFLERESULTSRESPONSE']._serialized_end=1001
+  _globals['_RAFFLESERVICE']._serialized_start=1004
+  _globals['_RAFFLESERVICE']._serialized_end=1361
 # @@protoc_insertion_point(module_scope)

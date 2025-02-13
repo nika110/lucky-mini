@@ -38,6 +38,7 @@ class NumberBet(BaseModel):
     raffle_id: str
     number: int
     amount: float
+    purchase_time: datetime
 
 
 # class Wallet(BaseModel):

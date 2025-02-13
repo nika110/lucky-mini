@@ -17,7 +17,7 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
         self.raffle_service = RaffleService()
         self.balance_service = BalanceService()
         self.user_service = UserRepository()
-        self.raffle_31_service = Raffle31Service
+        self.raffle_31_service = Raffle31Service()
 
 
     async def PurchaseTickets(
@@ -103,34 +103,69 @@ class RaffleServicer(raffle_pb2_grpc.RaffleServiceServicer):
 
     async def GetCurrentRaffle(self, request, context):
         try:
-            # First get the current raffle
-            current_raffle = await self.raffle_service.get_current_raffle()
-            if not current_raffle:
-                await context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
+            if request.game_type == "lucky_raffle":
+                current_raffle = await self.raffle_service.get_current_raffle()
+                if not current_raffle:
+                    await context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
 
-            # Then get the user
-            user = await self.user_service.get_user_from_token(request.user_auth_token)
-            if not user:
-                await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
+                user = await self.user_service.get_user_from_token(request.user_auth_token)
+                if not user:
+                    await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
 
-            # Get user tickets and check participation
-            get_user_ticket = await self.raffle_service.ticket_repo.get_user_tickets(user['user_id'])
-            participating = any(ticket.raffle_id == current_raffle.id for ticket in get_user_ticket)
+                get_user_ticket = await self.raffle_service.ticket_repo.get_user_tickets(user['user_id'])
+                participating = any(ticket.raffle_id == current_raffle.id for ticket in get_user_ticket)
 
-            # Get total pool
-            total_pool = float(await self.raffle_service.get_total_pool(current_raffle.id) or 0)
+                total_pool = float(await self.raffle_service.get_total_pool(current_raffle.id) or 0)
 
-            # Create and return response
-            response = raffle_pb2.GetCurrentRaffleResponse(
-                raffle_id=current_raffle.id,
-                end_time=int(current_raffle.end_time.timestamp()),
-                current_pool=total_pool,
-                participating=participating
-            )
-            return response
+                # Create LuckyRaffleData (even though it's empty in this case)
+                lucky_raffle_data = raffle_pb2.LuckyRaffleData()
+
+                return raffle_pb2.GetCurrentRaffleResponse(
+                    raffle_id=current_raffle.id,
+                    end_time=int(current_raffle.end_time.timestamp()),
+                    current_pool=total_pool,
+                    participating=participating,
+                    lucky_raffle_data=lucky_raffle_data  # Use the oneof field
+                )
+
+            elif request.game_type == "lucky_31":
+                current_raffle = await self.raffle_31_service.get_current_raffle()
+                if not current_raffle:
+                    await context.abort(grpc.StatusCode.NOT_FOUND, "No active raffle found")
+
+                user = await self.user_service.get_user_from_token(request.user_auth_token)
+                if not user:
+                    await context.abort(grpc.StatusCode.NOT_FOUND, "User not found")
+
+                get_user_ticket = await self.raffle_31_service.ticket_repo.get_user_bets(user['user_id'])
+                participating = any(ticket.raffle_id == current_raffle.id for ticket in get_user_ticket)
+
+                total_pool = float(await self.raffle_31_service.get_total_pool(current_raffle.id) or 0)
+
+                # Get ticket numbers for Lucky31
+                ticket_numbers = await self.raffle_31_service.get_ticket_numbers(user['user_id'], current_raffle.id)
+
+                # Create Lucky31Data with ticket numbers
+                lucky_31_data = raffle_pb2.Lucky31Data(ticket_numbers=ticket_numbers)
+
+                return raffle_pb2.GetCurrentRaffleResponse(
+                    raffle_id=current_raffle.id,
+                    end_time=int(current_raffle.end_time.timestamp()),
+                    current_pool=total_pool,
+                    participating=participating,
+                    lucky_31_data=lucky_31_data  # Use the oneof field
+                )
+
+            else:
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Invalid game type")
+
+        except Exception as e:
+            await context.abort(grpc.StatusCode.INTERNAL, f"Internal error: {str(e)}")
 
         except Exception as e:
             await context.abort(grpc.StatusCode.INTERNAL, str(e))
+
+
     def _convert_to_proto_winner(self, winner) -> raffle_pb2.Winner:
         try:
             # Create a new Winner proto message
