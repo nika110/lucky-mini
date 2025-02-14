@@ -66,6 +66,16 @@ export class RaffleController {
       }[];
       const errors = [];
 
+      const authClient = this.grpcManager.getAuthClient();
+      if (!authClient.isReady()) {
+        return res.status(503).json({
+          success: false,
+          message: "Auth service temporarily unavailable",
+          data: null,
+        });
+      }
+      const configResponse = await authClient.getConfig();
+
       for (const payout of winners) {
         try {
           // Find user's wallet address
@@ -82,10 +92,14 @@ export class RaffleController {
             continue;
           }
 
+          const calculatedAmount = Math.floor(
+            (+payout.amount / configResponse.ticket_price) as number
+          );
+
           // Process TON transaction
           const txResult = await tonWalletService.payoutTon(
             user.ton_public_key,
-            payout.amount
+            calculatedAmount.toString()
           );
 
           console.log("txResult", txResult);

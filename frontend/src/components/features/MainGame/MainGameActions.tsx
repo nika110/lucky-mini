@@ -18,7 +18,7 @@ import WalletNotConnectedModal from "@/components/shared/Modals/WalletConnectedM
 import { GAME_TYPE } from "@/types/raffle";
 
 // Constants
-const TON_CONTRACT_ADDRESS = "UQDn5NpxXKx7nPQbv-gewyYS2DdS6MtB6bE6HL2sM32IjVoF";
+const TON_CONTRACT_ADDRESS = "UQBY4Mp4Niqts0nhCDJj01JBseN4aIgCVfclZfwHhLFJpIqj";
 const TRANSACTION_VALIDITY_HOURS = 1;
 const PROOF_OF_FAIRNESS_URL = "https://www.google.com";
 const HOW_IT_WORKS_URL = "https://www.google.com";

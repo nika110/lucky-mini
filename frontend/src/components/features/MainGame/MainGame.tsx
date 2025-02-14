@@ -84,7 +84,6 @@ const MainGame: FC<MainGameProps> = ({ user }) => {
       const data = JSON.parse(lastMessage.data);
       switch (data.type) {
         case "pool_update": {
-          alert("pool_update" + JSON.stringify(data.total_pool));
           setRafflePool(+data.total_pool);
           break;
         }

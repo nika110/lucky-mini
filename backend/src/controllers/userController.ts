@@ -224,6 +224,9 @@ export class UserController {
   ) {
     try {
       const { telegramId } = req.params;
+      const query = req.query;
+      const page = parseInt(query.page as string) || 1;
+      const pageSize = parseInt(query.page_size as string) || 10;
 
       const user = await UserSchema.findOne({ telegram_id: telegramId })
         .select("-__v") // stuff users
@@ -247,7 +250,7 @@ export class UserController {
           });
         }
 
-        const authResponse = await authClient.listUserReferrals(user.id);
+        const authResponse = await authClient.listUserReferrals(user.id, page, pageSize);
 
         return res.status(200).json({
           success: true,

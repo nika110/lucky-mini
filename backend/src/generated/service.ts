@@ -60,10 +60,13 @@ export interface GetConfigResponse {
 
 export interface ListUserReferralsRequest {
   user_id: string;
+  page: number;
+  page_size: number;
 }
 
 export interface ListUserReferralsResponse {
   telegram_ids: string[];
+  total_count: number;
 }
 
 export interface IncreaseXpRequest {

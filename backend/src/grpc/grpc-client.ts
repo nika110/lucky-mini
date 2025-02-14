@@ -315,12 +315,12 @@ export class AuthClient extends BaseGrpcClient {
     });
   }
 
-  async listUserReferrals(user_id: string): Promise<ListUserReferralsResponse> {
+  async listUserReferrals(user_id: string, page: number, page_size: number): Promise<ListUserReferralsResponse> {
     if (!this.isInitialized) {
       throw new Error("gRPC client not initialized");
     }
 
-    const request: ListUserReferralsRequest = { user_id };
+    const request: ListUserReferralsRequest = { user_id, page, page_size };
 
     return new Promise((resolve, reject) => {
       this.grpcClient.listUserReferrals(
