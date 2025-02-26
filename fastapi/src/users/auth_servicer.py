@@ -63,7 +63,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             context: grpc.aio.ServicerContext,
     ) -> auth_pb2.AuthTelegramResponse:
         try:
-            user, token = await self.auth_service.authenticate_telegram(
+            user, token, xp_earned = await self.auth_service.authenticate_telegram(
                 telegram_id=request.telegram_id,
                 telegram_auth_code=request.telegram_auth_code,
                 referred_by=request.referred_by if request.HasField('referred_by') else None
@@ -76,6 +76,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
             logger.info(f"Successfully authenticated user: {user.telegram_id}")
             logger.info(f"Current login streak: {user.login_streak}")
+            logger.info(f"XP earned from login: {xp_earned}")
             return response
 
         except ValueError as e:
