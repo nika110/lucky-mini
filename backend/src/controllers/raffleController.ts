@@ -5,6 +5,7 @@ import { IUserGet } from "../types/interfaces";
 import { User as UserSchema } from "../models/shemas";
 import { TonTransactionService } from "../services/tonTransactions";
 import { TonTransactionWalletService } from "../services/tonWallet";
+import { GameType } from "../generated/service";
 
 interface PayoutRequest {
   password: string;
@@ -145,11 +146,12 @@ export class RaffleController {
   }
 
   public async getCurrentRaffle(
-    req: Request<IUserGet, {}, { userId: string }>,
+    req: Request<IUserGet, {}, { userId: string; gameType: GameType }>,
     res: Response<ApiResponse<any>>
   ): Promise<Response<ApiResponse<any>>> {
     try {
       const { telegramId } = req.params;
+      const { gameType } = req.body;
       const token = req.headers.authorization?.split(" ")[1];
 
       if (!telegramId || !token) {
@@ -171,7 +173,7 @@ export class RaffleController {
       }
       console.log("token", token);
 
-      const currentRaffle = await grpcClient.getCurrentRaffle(token);
+      const currentRaffle = await grpcClient.getCurrentRaffle(token, gameType);
 
       return res.status(200).json({
         success: true,

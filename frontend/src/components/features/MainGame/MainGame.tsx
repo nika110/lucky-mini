@@ -24,6 +24,7 @@ import LostModal from "@/components/shared/Modals/LostModal";
 import WonModal from "@/components/shared/Modals/WonModal";
 import { GiftIcon } from "@/components/shared/UI/Icons/GiftIcon";
 import gsap from "gsap";
+import { GAME_TYPE } from "@/types/raffle";
 
 interface MainGameProps {
   user: User | null;
@@ -57,7 +58,11 @@ const MainGame: FC<MainGameProps> = ({ user }) => {
     isLoading: isLoadingCurrentRaffle,
     isFetching: isFetchingCurrentRaffle,
   } = useGetCurrentRaffleQuery(
-    { token: token ? token : "", telegram_id: user ? user.telegram_id : "" },
+    {
+      token: token ? token : "",
+      telegram_id: user ? user.telegram_id : "",
+      gameType: GAME_TYPE.LUCKY_RAFFLE,
+    },
     { skip: !user || !token || !readyState }
   );
 

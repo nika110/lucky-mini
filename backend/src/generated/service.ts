@@ -11,6 +11,9 @@ export interface UserProfile {
   xp: number;
   referred_by?: string;
   referrals: string[];
+  last_login: number;
+  login_streak: number;
+  last_streak_update: number;
 }
 
 // Auth Types
@@ -280,13 +283,25 @@ export interface PurchaseTicketsResponse {
 
 export interface GetCurrentRaffleRequest {
   user_auth_token: string;
+  game_type: GameType;
 }
+
+export interface Lucky31Data {
+  ticket_numbers: Record<number, number>;
+}
+
+export interface luckyRaffleData {}
+
+export type RaffleSpecificData =
+  | { type: "lucky31Data"; data: Lucky31Data }
+  | { type: "luckyRaffleData"; data: luckyRaffleData };
 
 export interface GetCurrentRaffleResponse {
   raffle_id: string;
   end_time: number;
   current_pool: number;
   participating: boolean;
+  raffle_specific_data?: RaffleSpecificData;
 }
 
 export interface IncreaseBalanceRequest {

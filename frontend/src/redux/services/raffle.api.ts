@@ -1,6 +1,6 @@
 import { ApiResponse } from "@/types/api";
 import { api } from "./api";
-import { ConfigApp, CurrentRaffle } from "@/types/raffle";
+import { ConfigApp, CurrentRaffle, GAME_TYPE } from "@/types/raffle";
 
 export const raffleApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -12,14 +12,18 @@ export const raffleApi = api.injectEndpoints({
     }),
     getCurrentRaffle: build.query<
       ApiResponse<CurrentRaffle>,
-      { token: string; telegram_id: string }
+      { token: string; telegram_id: string; gameType: GAME_TYPE }
     >({
       query: ({
         // token,x
         telegram_id,
+        gameType,
       }) => ({
         url: `/users/${telegram_id}/current-raffle`,
-        method: "GET",
+        method: "POST",
+        body: {
+          gameType,
+        },
       }),
     }),
     increaseXP: build.mutation<

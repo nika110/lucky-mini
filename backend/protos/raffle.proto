@@ -17,9 +17,7 @@ message IncreaseBalanceRequest {
 message IncreaseBalanceResponse {
     int32 balance = 1;
 }
-// TODO: INCREASE BALANCE AND ADD EVERYTHING WITH USER
-// TODO: XP SYSTEM
-// TODO: REFERRAL SYSTEM
+
 message PurchaseTicketsRequest {
     string user_id = 1;
     int32 ticket_count = 2;
@@ -34,14 +32,26 @@ message PurchaseTicketsResponse {
 
 message GetCurrentRaffleRequest {
     string user_auth_token = 1;
+    string game_type = 2;
 }
 
 message GetCurrentRaffleResponse {
     string raffle_id = 1;
     int64 end_time = 2;
-    double current_pool = 3;
-    bool participating = 4;
+    bool participating = 3;
+    double current_pool = 4;
 
+    oneof raffle_specific_data {
+        Lucky31Data lucky_31_data = 5;
+        LuckyRaffleData lucky_raffle_data = 6;
+    }
+}
+
+message Lucky31Data {
+    map<int64, int64> ticket_numbers = 1;
+}
+
+message LuckyRaffleData {
 }
 
 message GetRaffleResultsRequest {

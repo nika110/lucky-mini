@@ -152,10 +152,12 @@ export class RaffleClient extends BaseGrpcClient {
   }
 
   async getCurrentRaffle(
-    userAuthToken: string
+    userAuthToken: string,
+    gameType: GameType
   ): Promise<GetCurrentRaffleResponse> {
     const request: GetCurrentRaffleRequest = {
       user_auth_token: userAuthToken,
+      game_type: gameType,
     };
     return new Promise((resolve, reject) => {
       this.client.getCurrentRaffle(
