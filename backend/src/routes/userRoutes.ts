@@ -124,7 +124,7 @@ let raffleController: RaffleController;
   }
 })();
 
-router.get(ROUTES.GET_CURRENT_RAFFLE, (req, res) => {
+router.post(ROUTES.GET_CURRENT_RAFFLE, (req, res) => {
   if (!raffleController) {
     return res.status(503).json({
       success: false,
