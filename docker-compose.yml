@@ -24,21 +24,21 @@ services:
     volumes:
       - ./fastapi/src:/app
 
-  frontend:
-    container_name: lucky_frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-      - app
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - main
+  # frontend:
+  #   container_name: lucky_frontend
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #     - app
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   networks:
+  #     - main
 
   backend:
     build:

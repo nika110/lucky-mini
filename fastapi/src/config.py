@@ -20,6 +20,6 @@ class Settings(BaseSettings):
 
     TELEGRAM_BOT_TOKEN:str = "5938982333:AAH8vafdqHtFCIctZTmhdaZG2Notq3CnA_4"
 
-    TICKET_PRICE: float = 0.15
+    TICKET_PRICE: float = 0.05
 
 settings = Settings()

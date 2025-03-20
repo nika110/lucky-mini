@@ -1,12 +1,4 @@
-import {
-  Cell,
-  Address,
-  TonClient,
-  beginCell,
-  storeMessage,
-  TransactionDescription,
-  CommonMessageInfoInternal,
-} from "@ton/ton";
+import { Cell, Address, beginCell } from "@ton/ton";
 
 interface TransactionValidationResult {
   amount: string;
@@ -29,18 +21,16 @@ enum TonErrorCodes {
 
 export class TonTransactionService {
   private static instance: TonTransactionService | null = null;
-  private readonly client: TonClient;
+  private readonly accessToken: string;
 
   private constructor() {
-    const apiKey = process.env.TON_API_KEY;
-    if (!apiKey) {
-      throw new Error("TON_API_KEY is not defined in environment variables");
+    const accessToken = process.env.GETBLOCK_API_KEY;
+    if (!accessToken) {
+      throw new Error(
+        "GETBLOCK_ACCESS_TOKEN is not defined in environment variables"
+      );
     }
-
-    this.client = new TonClient({
-      endpoint: "https://toncenter.com/api/v2/jsonRPC",
-      apiKey,
-    });
+    this.accessToken = accessToken;
   }
 
   public static getInstance(): TonTransactionService {
@@ -51,7 +41,6 @@ export class TonTransactionService {
   }
 
   private convertNanoToTon(nanoTons: bigint | string): string {
-    console.log("NANOTONS", nanoTons);
     const nanoTonsBig =
       typeof nanoTons === "string" ? BigInt(nanoTons) : nanoTons;
     const decimal = nanoTonsBig % 1000000000n;
@@ -71,112 +60,42 @@ export class TonTransactionService {
     return `${whole}.${trimmedDecimal}`;
   }
 
-  private async retry<T>(
-    fn: () => Promise<T>,
-    options: { retries: number; delay: number }
-  ): Promise<T> {
-    let lastError: Error | undefined;
-
-    for (let i = 0; i < options.retries; i++) {
-      try {
-        console.log(`Starting retry attempt ${i + 1}`);
-        const result = await fn().catch((error) => {
-          console.error(`Error in retry attempt ${i + 1}:`, error);
-          throw error;
-        });
-        console.log(`Retry attempt ${i + 1} succeeded`);
-        return result;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        console.log(
-          `Retry attempt ${i + 1} failed, waiting ${
-            options.delay
-          }ms before next attempt`
-        );
-        await new Promise((resolve) => setTimeout(resolve, options.delay));
-      }
-    }
-
-    throw new TonTransactionError(
-      "Max retries exceeded",
-      TonErrorCodes.TRANSACTION_NOT_FOUND,
-      lastError
-    );
-  }
-
   private async delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private async searchTransaction(
-    parsedAddress: Address,
-    bocString: string,
-    attempt: number
-  ): Promise<TransactionValidationResult> {
-    console.log(`Search attempt ${attempt + 1} started`);
-    let transactions;
+  private async getTransactions(address: string): Promise<any[]> {
     try {
-      transactions = await this.client.getTransactions(parsedAddress, {
-        limit: 10,
+      const url = `https://go.getblock.io/${this.accessToken}/getTransactions?address=${address}&limit=10`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      console.log("Raw response from getTransactions:", transactions);
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(
+          `API Error: ${data.error.message || JSON.stringify(data.error)}`
+        );
+      }
+
+      return data.result || [];
     } catch (error) {
       console.error("Failed to get transactions:", error);
       throw new TonTransactionError(
-        "Failed to fetch transactions",
+        "Failed to get transactions",
         TonErrorCodes.TRANSACTION_NOT_FOUND,
         error
       );
     }
-    console.log(
-      `Search attempt ${attempt + 1} received ${
-        transactions.length
-      } transactions`
-    );
-
-    for (const tx of transactions) {
-      const inMsg = tx.inMessage;
-      console.log(
-        `Checking transaction ${tx.hash().toString("hex")}, type: ${
-          inMsg?.info.type
-        }`
-      );
-
-      if (inMsg?.info.type === "external-in") {
-        const inBOC = inMsg?.body;
-
-        if (typeof inBOC === "undefined") {
-          console.log("Skipping undefined BOC");
-          continue;
-        }
-
-        const extHash = Cell.fromBase64(bocString).hash().toString("hex");
-        const inHash = beginCell()
-          .store(storeMessage(inMsg))
-          .endCell()
-          .hash()
-          .toString("hex");
-
-        if (extHash === inHash) {
-          const clearMessage = tx.outMessages.get(0);
-          if (clearMessage) {
-            const amount = (clearMessage.info as CommonMessageInfoInternal)
-              .value.coins;
-
-            const convertedAmount = this.convertNanoToTon(amount);
-            return {
-              amount: convertedAmount,
-              isValid: true,
-            };
-          }
-        }
-      }
-    }
-
-    return {
-      amount: "0",
-      isValid: false,
-    };
   }
 
   public async validateBoc(
@@ -184,42 +103,119 @@ export class TonTransactionService {
     destinationAddress: string
   ): Promise<TransactionValidationResult> {
     try {
+      // Parse and validate the destination address
       const parsedAddress = Address.parse(destinationAddress);
-      const searchAttempts = 5;
-      const searchDelay = 15000;
-      const maxRetries = 3;
-      const retryDelay = 15000;
 
-      for (let attempt = 0; attempt < searchAttempts; attempt++) {
+      // Parse the BOC to get its hash for transaction lookup
+      let cell;
+      try {
+        cell = Cell.fromBase64(bocString);
+      } catch (error) {
+        throw new TonTransactionError(
+          "Invalid BOC string",
+          TonErrorCodes.INVALID_BOC,
+          error
+        );
+      }
+
+      const bocHash = cell.hash().toString("hex");
+      console.log(`Validating BOC with hash: ${bocHash}`);
+
+      // Max attempts and delay configuration
+      const maxAttempts = 10;
+      const attemptDelay = 3000; // 3 seconds
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
         try {
           if (attempt > 0) {
-            console.log(`Waiting ${searchDelay}ms before next attempt...`);
-            await this.delay(searchDelay);
+            console.log(
+              `Waiting ${attemptDelay}ms before attempt ${attempt + 1}...`
+            );
+            await this.delay(attemptDelay);
           }
 
-          const result = await this.retry(
-            async () =>
-              this.searchTransaction(parsedAddress, bocString, attempt),
-            { retries: maxRetries, delay: retryDelay }
+          console.log(
+            `Checking transaction status, attempt ${attempt + 1}/${maxAttempts}`
           );
 
-          if (result.isValid) {
-            return result;
+          // Get recent transactions for the address
+          const transactions = await this.getTransactions(
+            parsedAddress.toString()
+          );
+          console.log(`Retrieved ${transactions.length} transactions`);
+
+          // Look for a matching transaction
+          for (const tx of transactions) {
+            // First, check if this transaction matches our BOC hash
+            const txHash = tx.transaction_id?.hash;
+            const inMsgHash = tx.in_msg?.body_hash;
+
+            console.log(
+              "IS MATCHING",
+              bocHash,
+              Buffer.from(txHash, "base64").toString("hex")
+            );
+
+            const isMatch =
+              // Compare with transaction hash
+              (txHash &&
+                Buffer.from(txHash, "base64").toString("hex") === bocHash) ||
+              // Compare with in_msg body hash
+              (inMsgHash && inMsgHash === bocHash) ||
+              // Compare with in_msg data/body
+              tx.in_msg?.msg_data?.body === bocString;
+
+            if (isMatch) {
+              console.log("Found matching transaction!");
+
+              // If found, check if transaction was successful
+              // In TON, a successful transaction typically has out_msgs
+              if (tx.out_msgs && tx.out_msgs.length > 0) {
+                // Get the amount from the first outgoing message
+                // Assuming the first out_msg contains the transfer to the target address
+                const outMsg = tx.out_msgs[0];
+                const amount = outMsg.value || "0";
+
+                console.log(
+                  `Transaction successful! Amount: ${this.convertNanoToTon(
+                    amount
+                  )} TON`
+                );
+
+                return {
+                  amount: this.convertNanoToTon(amount),
+                  isValid: true,
+                };
+              }
+            }
           }
 
-          console.log(`Attempt ${attempt + 1} didn't find the transaction`);
+          console.log("No matching transaction found in this attempt");
         } catch (error) {
           console.error(`Error in attempt ${attempt + 1}:`, error);
         }
       }
 
-      console.log("Transaction not found after all attempts");
+      console.log("Max attempts reached, transaction validation failed");
       return {
         amount: "0",
         isValid: false,
       };
     } catch (error) {
-      console.error("Transaction validation failed:", error);
+      console.error("BOC validation failed:", error);
+
+      if (error instanceof TonTransactionError) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.message.includes("Invalid address")) {
+        throw new TonTransactionError(
+          "Invalid destination address",
+          TonErrorCodes.INVALID_ADDRESS,
+          error
+        );
+      }
+
       return {
         amount: "0",
         isValid: false,
